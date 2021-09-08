@@ -19,14 +19,11 @@ public class AddTwoNumbers {
             l2_amount++;
             currentNode = currentNode.next;
         }
-
         // create char arrays 
         reverse_charsl1 = new char[l1_amount];
         reverse_charsl2 = new char[l2_amount];
-
         String number1 = "";
         String number2 = "";
-        
         
         currentNode = l1;
         for (int k=0;k < l1_amount; k++){
@@ -47,8 +44,6 @@ public class AddTwoNumbers {
                 k = l2_amount;
             }
         }
-        
-
         char[] number1_chars = number1.toCharArray();
         char[] number2_chars = number2.toCharArray();
 
@@ -66,32 +61,29 @@ public class AddTwoNumbers {
             reverse_charsl2[l2_amount-x-1] = c2;
             x++;
         }
-
         // SUM THE NUMBERS FROM L1 and L2
 
-        int sum1 = Integer.parseInt(String.valueOf(reverse_charsl1));
-        int sum2 = Integer.parseInt(String.valueOf(reverse_charsl2));
+        long sum1 = Integer.parseInt(String.valueOf(reverse_charsl1));
+        long sum2 = Integer.parseInt(String.valueOf(reverse_charsl2));
 
-        int sum3 = sum1 + sum2;
+        long sum3 = sum1 + sum2;
         
         // REVERSE THE NEW NUMBER
-        int sum3bits = countBits(sum3);     // count how many integers
+        long sum3bits = countBits(sum3);     // count how many integers
         // create string from sum3
         String sum3_string = String.valueOf(sum3);
 
         String reversed_sum3_string = reverse(sum3_string, sum3bits);
         char[] reversed_sum3_char = reversed_sum3_string.toCharArray();
-        ListNode[] l3_array = new ListNode[sum3bits];
-        
+        ListNode[] l3_array = new ListNode[(int)sum3bits];
 
-       int a = 0;
+        int a = 0;
 
         for (char c : reversed_sum3_char){
             int v = Integer.parseInt(String.valueOf(c));
             ListNode Node = new ListNode(v);
             l3_array[a] = Node;
             a++;
-
         }
 
         //for (int k = 0 ; k < sum3bits ; k++) {
@@ -104,19 +96,12 @@ public class AddTwoNumbers {
 
         for (ListNode node : l3_array){
         }
-
         // CREATE NEW LINKED LIST CONTAINING REVERSED SUM 3
 
-        
         return l3_array[0];
     }
-
     
-    
-    
-    
-    
-    static int countBits(int number){
+    static int countBits(long number){
         String convertedNumber = String.valueOf(number);
         char[] characters = convertedNumber.toCharArray();
         int c = 0;
@@ -125,7 +110,6 @@ public class AddTwoNumbers {
         }
         return c;
     }
-    
     
     static int amountNodes(ListNode node) { // OLD
         int amount = 0;
@@ -136,23 +120,22 @@ public class AddTwoNumbers {
         return amount;
     }
     
-    static String reverse(String number_string, int amount){
+    static String reverse(String number_string, long amount){
         char[] number1_chars = number_string.toCharArray();
-        char[] reverse_chars = new char[amount];
+        int amount_int = (int)amount;
+        char[] reverse_chars = new char[amount_int];
         int i = 0;
         for (char c : number1_chars){
-            reverse_chars[amount-i-1] = c;
+            reverse_chars[amount_int-i-1] = c;
             i++;
         }
         String converted = String.copyValueOf(reverse_chars);
         return converted;
     }
     
-    
-    
 }
 
-
+/** 
 class ListNode {
     int val;
     ListNode next;
@@ -160,6 +143,7 @@ class ListNode {
     ListNode(int val) { this.val = val; }
     ListNode(int val, ListNode next) { this.val = val; this.next = next;
     }
+    *//
 
     /** 
     
