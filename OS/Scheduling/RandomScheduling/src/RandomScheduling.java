@@ -1,5 +1,9 @@
 
 
+
+
+
+
 import java.util.Random;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -21,9 +25,8 @@ import java.util.Iterator;
 public class RandomScheduling {       // Fix typo in name
 
 	Random rng;
-  int global_tick;
-  ArrayList<ScheduledProcess> preemptive_queue = new ArrayList<ScheduledProcess>();
-  ArrayList<ScheduledProcess> non_preemptive_queue = new ArrayList<ScheduledProcess>();
+  int global_ticks;
+  ArrayList<ScheduledProcess> queue = new ArrayList<ScheduledProcess>();
   ArrayList<ScheduledProcess> finished_processes = new ArrayList<ScheduledProcess>();
 
 
@@ -34,7 +37,6 @@ public class RandomScheduling {       // Fix typo in name
     int arrivalMoment;
 		int totalWaitingTime;
 		int allocatedCpuTime;
-    long arrival; // save the time from the pure System.nanoTime()
 
 		public ScheduledProcess(int processId, int burstTime, int arrivalMoment) {
 			this.processId = processId;
@@ -56,79 +58,89 @@ public class RandomScheduling {       // Fix typo in name
     ScheduledProcess p;
     int ticks;
     long p_time;
-	  reset();
 
-    long time_start = System.nanoTime();
+    int global_ticks = 0;
     // Creates processes
     for (int k=0 ; k<=numProcesses ; k++) {
-      int t = calculateTime(time_start);
       int generatedBurst = generateBurst(maxBurstTime, minBurstTime);
-      ScheduledProcess p1 = new ScheduledProcess(k+1, generatedBurst, t);
-      ScheduledProcess p2 = new ScheduledProcess(k+1, generatedBurst, t);
-      long arrival_t = System.nanoTime();
-      p1.arrival = arrival_t;
-      p2.arrival = arrival_t;
-      preemptive_queue.add(p1);
-      non_preemptive_queue.add(p2);
-
+      ScheduledProcess process = new ScheduledProcess(k+1, generatedBurst, global_ticks);
+      queue.add(process);
+      global_ticks++;
     }
-
+  
+    finished_processes.clear();
     
     if (isPreemptive) { 
-      while (finished_processes.size() != numProcesses) {
+      while (finished_processes.size() < numProcesses) {
 
-        try {
-          p = preemptive_queue.get(rng.nextInt(0, (numProcesses-finished_processes.size())));
-        } catch (IndexOutOfBoundsException e) {
-          p = preemptive_queue.get(0); }
+        p = queue.get(rng.nextInt(0, (numProcesses-finished_processes.size())+1));
         
         ticks = 0;
-        while (ticks != timeQuantum) {
-          p_time = System.nanoTime();
-          p.burstTime--;
-          addTimeCPU(p, p_time); 
+        while (ticks < timeQuantum) {
+          global_ticks++;
           ticks++;
-          //tickProcess(preemptive_queue, probArrival, maxArrivalsPerTick, time_start, maxBurstTime, minBurstTime);
+          addTimeCPU(p, 1);
+          waitTimeTick(p, queue);
+          p.burstTime--;      // Complete process
+
           if (p.burstTime <= 0) {
-            preemptive_queue.remove(p);              // pid-1 equals index
+            queue.remove(p);              // pid-1 equals index
             finished_processes.add(p);
-            addTimeCPU(p, p_time);
+            ticks = 0;
+            System.out.println("PROCESS DONE --> "+p.processId+"\t|BURST --> "+p.burst+" \t| ARRIVAL -->"+p.arrivalMoment+" \t| WAIT--> "+p.totalWaitingTime+" |\t CPU TIME --> "+p.allocatedCpuTime);
             break;
           }
         }
     
       }
+    System.out.println("\n TOTAL TIME: "+global_ticks+"\t | NUMBER OF PROCESSES: "+finished_processes.size()+" \t | \t AVERAGE WAITING TIME: "+calcWaitTime(finished_processes)+" |");
     }
+    //global_ticks = 0;
+    finished_processes.clear();
+
     if (!isPreemptive) {
-      while (finished_processes.size() != numProcesses) {
+      while (finished_processes.size() < numProcesses) {
 
-        System.out.println("entered");
-        try {
-          p = non_preemptive_queue.get(rng.nextInt(0, (numProcesses - finished_processes.size()) + 1));
-        } catch (IndexOutOfBoundsException e) {
-          p = non_preemptive_queue.get(0); }
-
-        long start_process = System.nanoTime();
-        while (p.burstTime != 0) {
+        p = queue.get(rng.nextInt(0, (numProcesses-finished_processes.size())+1));
+        
+        long start_process = global_ticks;
+        while (p.burstTime > 0) {
+          global_ticks++;
+          addTimeCPU(p, 1);
+          waitTimeTick(p, queue);
           p.burstTime--;      // Complete process
-          //tickProcess(non_preemptive_queue, probArrival, maxArrivalsPerTick, time_start, maxBurstTime, minBurstTime);
-          if (p.burstTime <= 0) {
-            non_preemptive_queue.remove(p);
-            finished_processes.add(p);
-            addTimeCPU(p, start_process);
-
-            break;
-          }
-        }  
-        non_preemptive_queue.remove(p);
+          //tickProcess(queue, probArrival, maxArrivalsPerTick, time_start, maxBurstTime, minBurstTime);
+        } 
+        System.out.println("PROCESS DONE --> "+p.processId+"\t|BURST --> "+p.burst+" \t| ARRIVAL -->"+p.arrivalMoment+" \t| WAIT--> "+p.totalWaitingTime+" |\t CPU TIME --> "+p.allocatedCpuTime);
+        queue.remove(p);
         finished_processes.add(p);
-        addTimeCPU(p, start_process);
+        addTimeCPU(p, 1);
 
       }
+    System.out.println("\n TOTAL TIME: "+global_ticks+"\t | NUMBER OF PROCESSES: "+finished_processes.size()+" \t | \t AVERAGE WAITING TIME: "+calcWaitTime(finished_processes)+" |");
     }
   }
+
+  
+  double calcWaitTime(ArrayList<ScheduledProcess> processes) {
+    int totalWait = 0;
+    int totalCpu = 0;
+    int processAmount = processes.size();
+    for (ScheduledProcess p : processes) {
+      totalWait += p.totalWaitingTime; 
+    }
+    double average = totalWait / processAmount; 
+    return average;
+  } 
+
     
-	
+  int[] timeSpent(ScheduledProcess p) {
+    int[] time_spent = new int[2];
+    time_spent[0] = p.allocatedCpuTime;   // CPU time
+    time_spent[1] = p.totalWaitingTime;   // Wait time
+    return time_spent;
+  }
+
 	public void printResults(int numProcesses) {
 		// 1. For each process, print its ID, burst time, arrival time, and total waiting time
 		// 2. Afterwards, print the complete execution time of the simulation
@@ -139,11 +151,10 @@ public class RandomScheduling {       // Fix typo in name
       p = iter.next();
       System.out.println("pid:     "+p.processId+"\nburst:   "
       +p.burst+"ns\narrival: "+p.arrivalMoment+"\ntotal wait time: "
-      +convertNanoSeconds(p.totalWaitingTime)+"ns\ntime on cpu: "+(p.allocatedCpuTime)+"\n----------------");
+      +(p.totalWaitingTime)+"ns\ntime on cpu: "+(p.allocatedCpuTime)+"\n----------------");
     }
 
 	}
-		
 	
 	public static void main(String args[]) {
 		final long rngSeed = 19990520;
@@ -170,21 +181,30 @@ public class RandomScheduling {       // Fix typo in name
 
 				scheduler.runNewSimulation(isPreemptive, timeQuantum, numProcesses, minBurstTime, maxBurstTime,maxArrivalsPerTick, probArrival);
 
-				System.out.println("Simulation results:"
+		/*	System.out.println("Simulation results:"
 					+ "\n" + "----------------------");	
 				scheduler.printResults(numProcesses);
-
+    */
 				System.out.println("\n");
 			}
 		}		
 		
 	}
 
+  void reset() {
+   
+  }
 
+  void waitTimeTick(ScheduledProcess ignored_process, ArrayList<ScheduledProcess> queue) {
+    for (ScheduledProcess p : queue) {
+      if (p == ignored_process) {  } 
+      else { p.totalWaitingTime += 1; }
+    }   
+  }
 
 
   public int generateBurst(int max, int min) {
-    return rng.nextInt((max-min)+min);
+    return rng.nextInt((max-min))+2;
   }
 
 
@@ -194,50 +214,35 @@ public class RandomScheduling {       // Fix typo in name
 	}
 
 
-	public void reset() {
-    preemptive_queue = new ArrayList<ScheduledProcess>();
-    finished_processes = new ArrayList<ScheduledProcess>();
-	}
 
-
-
-  int calculateTime(long time) {
-    long time_now = System.nanoTime();
-    int t = (int)(time_now - time);
-    return t;
+  void addTimeCPU(ScheduledProcess p, int ticks) {
+    p.allocatedCpuTime += ticks; 
   }
 
-  void addTimeCPU(ScheduledProcess p, long start_time) {
-    int t = (int)(System.nanoTime() - start_time);
-    p.allocatedCpuTime += t; 
-  }
-
-  void addWaitTime(ScheduledProcess p, long start_time) {
-    int t = (int)(System.nanoTime() - start_time);
-    p.totalWaitingTime += t; 
+  void addWaitTime(ScheduledProcess p, int ticks) {
+    p.totalWaitingTime += ticks; 
   }
 
 
 
-  RandomScheduling.ScheduledProcess tickSwap(double probArrival, int maxArrivals, long start_time, ScheduledProcess p, int numProcesses) {
+  void tickSwap(double probArrival, int maxArrivals, long start_time, ScheduledProcess p, int numProcesses) {
     double rand_num = rng.nextDouble();
     for (int k=0 ; k<maxArrivals ; k++) { 
       if (rand_num <= probArrival) {
-          ScheduledProcess arrived_p = preemptive_queue.get(rng.nextInt(0, (numProcesses-finished_processes.size())));
-          return arrived_p;
+          ScheduledProcess arrived_p = queue.get(rng.nextInt(0, (numProcesses-finished_processes.size())));
+          queue.add(arrived_p);
       }
     }
-    return p;       // If the random number was in the 1/4 percentile then dont change the process
   }
 
 
   // Is prob wrong, shall new processes be swapped or created?
   /* Handles the potential generation of new processes per tick */
-  void tickProcess(ArrayList<RandomScheduling.ScheduledProcess> container, double probArrival, int maxArrivals, long start_time, int maxBurst, int minBurst) {
+  void tickProcess(ArrayList<RandomScheduling.ScheduledProcess> container, double probArrival, int maxArrivals, int maxBurst, int minBurst) {
     double rand_num = rng.nextDouble();
     for (int k=0 ; k<maxArrivals ; k++) { 
       if (rand_num <= probArrival) {
-        int arrival = (int)(System.nanoTime() - start_time);
+        int arrival = global_ticks; 
         int pid = container.size() + finished_processes.size();
         ScheduledProcess p = new ScheduledProcess(pid, generateBurst(maxBurst, minBurst), arrival); 
         container.add(p);
@@ -246,14 +251,6 @@ public class RandomScheduling {       // Fix typo in name
     }
   }
 
-
-  Double convertNanoSeconds(int ns) {
-    double seconds = Double.parseDouble(String.valueOf(ns));
-    seconds = seconds * Math.pow(10, -9);
-    return seconds;
-  }
-
-	
 }
 
 
