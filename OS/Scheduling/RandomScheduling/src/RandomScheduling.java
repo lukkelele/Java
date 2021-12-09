@@ -3,7 +3,7 @@
 
 
 
-
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.Random;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -11,7 +11,7 @@ import java.util.Iterator;
 /*
  * File:	RandomScheduling.java
  * Course: 	20HT - Operating Systems - 1DV512
- * Author: 	*State your name and LNU student ID here! (e.g., ab222cd)*
+ * Author: 	Lukas Gunnarsson, lg222xf@student.lnu.se
  * Date: 	November 2020
  */
 
@@ -56,11 +56,11 @@ public class RandomScheduling {       // Fix typo in name
 		final int maxArrivalsPerTick, 
     final double probArrival) {
     ScheduledProcess p;
-    int ticks;
-    long p_time;
+    int ticks = 0;
 
     int global_ticks = 0;
-    // Creates processes
+    queue.clear();
+    finished_processes.clear();
     for (int k=0 ; k<=numProcesses ; k++) {
       int generatedBurst = generateBurst(maxBurstTime, minBurstTime);
       ScheduledProcess process = new ScheduledProcess(k+1, generatedBurst, global_ticks);
@@ -69,53 +69,48 @@ public class RandomScheduling {       // Fix typo in name
     }
   
     finished_processes.clear();
-    
+    ticks = 0;
+
     if (isPreemptive) { 
       while (finished_processes.size() < numProcesses) {
-
-        p = queue.get(rng.nextInt(0, (numProcesses-finished_processes.size())+1));
         
-        ticks = 0;
+        p = getRandomProcess();
+
+        ticks = 0; 
         while (ticks < timeQuantum) {
           global_ticks++;
-          ticks++;
-          addTimeCPU(p, 1);
+          addTimeCPU(p);
           waitTimeTick(p, queue);
-          p.burstTime--;      // Complete process
-
+          p.burstTime--;
+          ticks++;
           if (p.burstTime <= 0) {
-            queue.remove(p);              // pid-1 equals index
+            printProcessResult(p);
+            queue.remove(p);
             finished_processes.add(p);
-            ticks = 0;
-            System.out.println("PROCESS DONE --> "+p.processId+"\t|BURST --> "+p.burst+" \t| ARRIVAL -->"+p.arrivalMoment+" \t| WAIT--> "+p.totalWaitingTime+" |\t CPU TIME --> "+p.allocatedCpuTime);
             break;
+            
           }
         }
-    
       }
+
     System.out.println("\n TOTAL TIME: "+global_ticks+"\t | NUMBER OF PROCESSES: "+finished_processes.size()+" \t | \t AVERAGE WAITING TIME: "+calcWaitTime(finished_processes)+" |");
     }
-    //global_ticks = 0;
-    finished_processes.clear();
+
 
     if (!isPreemptive) {
       while (finished_processes.size() < numProcesses) {
-
-        p = queue.get(rng.nextInt(0, (numProcesses-finished_processes.size())+1));
+        p = getRandomProcess();
         
-        long start_process = global_ticks;
         while (p.burstTime > 0) {
           global_ticks++;
-          addTimeCPU(p, 1);
+          addTimeCPU(p);
           waitTimeTick(p, queue);
           p.burstTime--;      // Complete process
-          //tickProcess(queue, probArrival, maxArrivalsPerTick, time_start, maxBurstTime, minBurstTime);
         } 
-        System.out.println("PROCESS DONE --> "+p.processId+"\t|BURST --> "+p.burst+" \t| ARRIVAL -->"+p.arrivalMoment+" \t| WAIT--> "+p.totalWaitingTime+" |\t CPU TIME --> "+p.allocatedCpuTime);
+
+        printProcessResult(p);
         queue.remove(p);
         finished_processes.add(p);
-        addTimeCPU(p, 1);
-
       }
     System.out.println("\n TOTAL TIME: "+global_ticks+"\t | NUMBER OF PROCESSES: "+finished_processes.size()+" \t | \t AVERAGE WAITING TIME: "+calcWaitTime(finished_processes)+" |");
     }
@@ -127,11 +122,25 @@ public class RandomScheduling {       // Fix typo in name
     int totalCpu = 0;
     int processAmount = processes.size();
     for (ScheduledProcess p : processes) {
-      totalWait += p.totalWaitingTime; 
+      totalWait += p.totalWaitingTime - p.arrivalMoment; 
     }
     double average = totalWait / processAmount; 
     return average;
   } 
+
+  
+  void printProcessResult(ScheduledProcess p) {
+    System.out.println("PROCESS DONE -->"+p.processId+"\t| BURST--> "+p.burst+"\t| ARRIVAL--> "+p.arrivalMoment+"\t| WAIT--> "+p.totalWaitingTime+"\t| CPU TIME--> "+p.allocatedCpuTime);
+  }
+
+  
+  ScheduledProcess getRandomProcess() {
+    ScheduledProcess p;
+    int queueSize = queue.size();
+    int randomIndex = rng.nextInt(queueSize);
+    p = queue.get(randomIndex);
+    return p;
+  }
 
     
   int[] timeSpent(ScheduledProcess p) {
@@ -180,7 +189,7 @@ public class RandomScheduling {       // Fix typo in name
 					+ " simulation #" + i);
 
 				scheduler.runNewSimulation(isPreemptive, timeQuantum, numProcesses, minBurstTime, maxBurstTime,maxArrivalsPerTick, probArrival);
-
+        scheduler.reset();
 		/*	System.out.println("Simulation results:"
 					+ "\n" + "----------------------");	
 				scheduler.printResults(numProcesses);
@@ -215,8 +224,8 @@ public class RandomScheduling {       // Fix typo in name
 
 
 
-  void addTimeCPU(ScheduledProcess p, int ticks) {
-    p.allocatedCpuTime += ticks; 
+  void addTimeCPU(ScheduledProcess p) {
+    p.allocatedCpuTime += 1; 
   }
 
   void addWaitTime(ScheduledProcess p, int ticks) {
@@ -225,27 +234,16 @@ public class RandomScheduling {       // Fix typo in name
 
 
 
-  void tickSwap(double probArrival, int maxArrivals, long start_time, ScheduledProcess p, int numProcesses) {
-    double rand_num = rng.nextDouble();
-    for (int k=0 ; k<maxArrivals ; k++) { 
-      if (rand_num <= probArrival) {
-          ScheduledProcess arrived_p = queue.get(rng.nextInt(0, (numProcesses-finished_processes.size())));
-          queue.add(arrived_p);
-      }
-    }
-  }
-
-
   // Is prob wrong, shall new processes be swapped or created?
   /* Handles the potential generation of new processes per tick */
-  void tickProcess(ArrayList<RandomScheduling.ScheduledProcess> container, double probArrival, int maxArrivals, int maxBurst, int minBurst) {
+  void tickProcess(double probArrival, int maxArrivals, int maxBurst, int minBurst) {
     double rand_num = rng.nextDouble();
     for (int k=0 ; k<maxArrivals ; k++) { 
       if (rand_num <= probArrival) {
         int arrival = global_ticks; 
-        int pid = container.size() + finished_processes.size();
+        int pid = queue.size() + finished_processes.size();
         ScheduledProcess p = new ScheduledProcess(pid, generateBurst(maxBurst, minBurst), arrival); 
-        container.add(p);
+        queue.add(p);
   
       }
     }
