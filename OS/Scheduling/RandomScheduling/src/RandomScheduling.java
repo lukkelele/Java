@@ -1,8 +1,5 @@
 
 
-
-
-
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.Random;
 import java.util.ArrayList;
@@ -26,9 +23,10 @@ public class RandomScheduling {       // Fix typo in name
 
 	Random rng;
   int global_ticks;
+  int newProcesses;
   ArrayList<ScheduledProcess> queue = new ArrayList<ScheduledProcess>();
   ArrayList<ScheduledProcess> finished_processes = new ArrayList<ScheduledProcess>();
-
+  
 
 	public static class ScheduledProcess {
 		int processId;
@@ -43,11 +41,11 @@ public class RandomScheduling {       // Fix typo in name
 			this.burstTime = burstTime;
       this.burst = burstTime;
 			this.arrivalMoment = arrivalMoment;
+
 		}
-		
 	}
-		
 	
+
 	public void runNewSimulation(final boolean isPreemptive, 
     final int timeQuantum,
 	  final int numProcesses,
@@ -57,28 +55,31 @@ public class RandomScheduling {       // Fix typo in name
     final double probArrival) {
     ScheduledProcess p;
     int ticks = 0;
-
     int global_ticks = 0;
+    newProcesses = 0;
+
     queue.clear();
     finished_processes.clear();
-    for (int k=0 ; k<=numProcesses ; k++) {
+    for (int k=0 ; k<numProcesses ; k++) {
       int generatedBurst = generateBurst(maxBurstTime, minBurstTime);
       ScheduledProcess process = new ScheduledProcess(k+1, generatedBurst, global_ticks);
       queue.add(process);
       global_ticks++;
     }
   
-    finished_processes.clear();
-    ticks = 0;
 
+    ticks = 0;
+    
     if (isPreemptive) { 
-      while (finished_processes.size() < numProcesses) {
-        
+
+      while (finished_processes.size() <= numProcesses) {
         p = getRandomProcess();
+      //  System.out.println("SIZE: "+queue.size() + finished_processes.size()); 
 
         ticks = 0; 
         while (ticks < timeQuantum) {
           global_ticks++;
+          tickProcess(probArrival, maxArrivalsPerTick, maxBurstTime, minBurstTime, numProcesses);
           addTimeCPU(p);
           waitTimeTick(p, queue);
           p.burstTime--;
@@ -92,22 +93,24 @@ public class RandomScheduling {       // Fix typo in name
           }
         }
       }
-
+      //while (finished_processes.size() < (queue.size() + finished_processes.size())) {
     System.out.println("\n TOTAL TIME: "+global_ticks+"\t | NUMBER OF PROCESSES: "+finished_processes.size()+" \t | \t AVERAGE WAITING TIME: "+calcWaitTime(finished_processes)+" |");
     }
 
-
+    System.out.println("\n!isPremptive ---");
     if (!isPreemptive) {
-      while (finished_processes.size() < numProcesses) {
+      while (finished_processes.size() <= numProcesses) {
         p = getRandomProcess();
-        
+//        System.out.println("SIZE: "+queue.size() + finished_processes.size()); 
         while (p.burstTime > 0) {
           global_ticks++;
+          tickProcess(probArrival, maxArrivalsPerTick, maxBurstTime, minBurstTime, numProcesses);
           addTimeCPU(p);
           waitTimeTick(p, queue);
           p.burstTime--;      // Complete process
         } 
 
+        System.out.println("\n!isPremptive ---");
         printProcessResult(p);
         queue.remove(p);
         finished_processes.add(p);
@@ -130,7 +133,7 @@ public class RandomScheduling {       // Fix typo in name
 
   
   void printProcessResult(ScheduledProcess p) {
-    System.out.println("PROCESS DONE -->"+p.processId+"\t| BURST--> "+p.burst+"\t| ARRIVAL--> "+p.arrivalMoment+"\t| WAIT--> "+p.totalWaitingTime+"\t| CPU TIME--> "+p.allocatedCpuTime);
+    System.out.println("PID-->"+p.processId+" \t| BURST--> "+p.burst+"\t| ARRIVAL--> "+p.arrivalMoment+"\t| WAIT--> "+p.totalWaitingTime+"\t| CPU TIME--> "+p.allocatedCpuTime);
   }
 
   
@@ -236,15 +239,21 @@ public class RandomScheduling {       // Fix typo in name
 
   // Is prob wrong, shall new processes be swapped or created?
   /* Handles the potential generation of new processes per tick */
-  void tickProcess(double probArrival, int maxArrivals, int maxBurst, int minBurst) {
+  void tickProcess(double probArrival, int maxArrivals, int maxBurst, int minBurst, int numProcesses) {
+    System.out.println("-- TICKPROCESS --");
     double rand_num = rng.nextDouble();
+    System.out.println("rand_num: "+rand_num);
+  //  System.out.println("tickProcess start");
     for (int k=0 ; k<maxArrivals ; k++) { 
       if (rand_num <= probArrival) {
-        int arrival = global_ticks; 
-        int pid = queue.size() + finished_processes.size();
+//        System.out.println("tickProcess roll");
+        int arrival = global_ticks;
+        newProcesses++;
+        int pid = numProcesses + newProcesses;
+        System.out.println("newProcesses=="+newProcesses);
         ScheduledProcess p = new ScheduledProcess(pid, generateBurst(maxBurst, minBurst), arrival); 
         queue.add(p);
-  
+ //       System.out.println("tickProcess EXIT\n");
       }
     }
   }
