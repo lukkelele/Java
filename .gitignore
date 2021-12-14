@@ -1,7 +1,7 @@
 
 # Object classes
 
-!*.java
+#!*.java
 **/*.class 
 **/*.odt
 .directory/
