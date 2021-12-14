@@ -4,4 +4,4 @@
 !*.java
 **/*.class 
 **/*.odt
-
+**/*.directory
