@@ -1,0 +1,7 @@
+
+# Object classes
+
+!*.java
+**/*.class 
+**/*.odt
+
