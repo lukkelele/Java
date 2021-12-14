@@ -5,3 +5,4 @@
 **/*.class 
 **/*.odt
 .directory/
+.directory
