@@ -10,7 +10,7 @@ import java.util.Iterator;
  */
 
 
-public class RandomScheduling {       // Fix typo in name
+public class RandomScheduling {       
 
 	Random rng;
   int totalProcesses;
@@ -23,7 +23,7 @@ public class RandomScheduling {       // Fix typo in name
 	public static class ScheduledProcess {
 		int processId;
 		int burstTime;
-		int burst;
+		int burst;            // Holds the initial given burst value and is not decremented
     int arrivalMoment;
 		int totalWaitingTime;
 		int allocatedCpuTime;
@@ -36,17 +36,17 @@ public class RandomScheduling {       // Fix typo in name
     this.arrivalMoment = arrivalMoment;
 		}
 	}
-	
+
 
   /**
    * Returns an integer array that is used to calculate average based on all simulations.
    */
-	public int[] runNewSimulation(final boolean isPreemptive, 
+	public int[] runNewSimulation(final boolean isPreemptive,
     final int timeQuantum,
 	  final int numProcesses,
-		final int minBurstTime, 
+		final int minBurstTime,
     final int maxBurstTime,
-		final int maxArrivalsPerTick, 
+		final int maxArrivalsPerTick,
     final double probArrival) throws InterruptedException {
     ScheduledProcess p;
 
@@ -55,14 +55,14 @@ public class RandomScheduling {       // Fix typo in name
     // Creates the initial processes
     for (int k=0 ; k<numProcesses ; k++) {
       int generatedBurst = generateBurst(maxBurstTime, minBurstTime);
-      ScheduledProcess process = new ScheduledProcess(k+1, generatedBurst, global_ticks);
+      ScheduledProcess process = new ScheduledProcess(k+1, generatedBurst, global_ticks);  // k+1 to get awawy from PID 0
       queue.add(process);
       global_ticks++;
     }
-  
-    
-    if (isPreemptive) { 
-      while (queue.size() > 0) {      // If the queue is empty, stop 
+
+
+    if (isPreemptive) {
+      while (queue.size() > 0) {      // If the queue is empty, stop
 
         p = getRandomProcess();
         ticks = 0;                    // Whenever time quantum is reached, or the process has executed fully, reset ticks
@@ -70,15 +70,16 @@ public class RandomScheduling {       // Fix typo in name
         while (ticks < timeQuantum) {
           global_ticks++;
           p.allocatedCpuTime++;       // Increments the allocated cpu time for the current process
-          tickProcess(numProcesses, probArrival, maxArrivalsPerTick);     // Arrival method 
+          tickProcess(numProcesses, probArrival, maxArrivalsPerTick);     // Arrival method
           waitTimeTick(p);            // Increments the wait time for processes waiting in the queue
           p.burstTime--;
           ticks++;
-          if (p.burstTime == 0) {
+          if (p.burstTime == 0) {     // If fully executed, remove from queue and move onto finished processes
             queue.remove(p);
+            printProcessResult(p);
             finished_processes.add(p);
             break;
-            
+
           }
         }
       }
@@ -89,11 +90,12 @@ public class RandomScheduling {       // Fix typo in name
         while (p.burstTime > 0) {
           global_ticks++;
           p.allocatedCpuTime++;       // Increments the allocated cpu time for the current process
-          tickProcess(numProcesses, probArrival, maxArrivalsPerTick);  
+          tickProcess(numProcesses, probArrival, maxArrivalsPerTick);
           waitTimeTick(p);            // Increments the wait time for processes waiting in the queue
           ticks++;
           p.burstTime--;
         }
+        printProcessResult(p);
         queue.remove(p);
         finished_processes.add(p);
       }
@@ -106,7 +108,7 @@ public class RandomScheduling {       // Fix typo in name
     int[] result = {timeSpent, processes, averageTime};
     return result;
   }
-  
+
 
   void reset() {
     queue = new ArrayList<ScheduledProcess>();
@@ -130,13 +132,13 @@ public class RandomScheduling {       // Fix typo in name
     return p;
   }
 
-  
+
 
   void waitTimeTick(ScheduledProcess ignored_process) {
     for (ScheduledProcess p : queue) {
-      if (p == ignored_process) { /* do nothing */ } 
+      if (p == ignored_process) { /* do nothing */ }
       else { p.totalWaitingTime += 1; } // If process is in queue, increment its total wait time
-    }   
+    }
   }
 
 
@@ -156,52 +158,54 @@ public class RandomScheduling {       // Fix typo in name
   void tickProcess(int numProcesses, double probArrival, int maxArrival) {
     ScheduledProcess p;
     double rand;
-    double probability = 1 - probArrival;     // 25% 
+    //double probability = 1 - probArrival;     // 25%, to reduce the creation for testing
+    double probability = probArrival;           // Default value but it is causing serious lag 
     int queueSize = queue.size();
     if (queueSize < (numProcesses-maxArrival)) { // If queue is larger than accepted amount
-      maxArrival = 1; // OVERWRITING here because otherwise the amount of processes go above +20k
+      //maxArrival = 1; // OVERWRITING here because otherwise the amount of processes go above +20k
       for (int k=0 ; k<maxArrival ; k++) {
-        rand = rng.nextDouble();      // 0 - 1.0 , if within the accepted range, then add new processes  
+        rand = rng.nextDouble();      // 0 - 1.0 , if within the accepted range, then add new processes
         if (rand < probability) {
-          addNewProcess(totalProcesses, generateBurst(8,2), global_ticks);
+          addNewProcess(totalProcesses, generateBurst(8,2), global_ticks); // Better approach to include the maxBurstTime and minBurstTime in the passed parameters to be able to change burstrange
         }
       }
     }
     else { /* do nothing  */ }
   }
 
+  /* Creates a new process and adds it in to the queue */
   void addNewProcess(int pid, int burst, int arrival) {
     ScheduledProcess p = new ScheduledProcess(totalProcesses, burst, arrival);
     queue.add(p);
     totalProcesses++;
   }
 
+
+  /* Prints the results for each indivial process plus the totals */
 	public void printResults() {
-		// 1. For each process, print its ID, burst time, arrival time, and total waiting time
-		// 2. Afterwards, print the complete execution time of the simulation
-		// and the average process waiting time
     ScheduledProcess p;
     Iterator<ScheduledProcess> iter = finished_processes.iterator();
     while (iter.hasNext()) {
       p = iter.next();
-      printProcessResult(p);
+      printProcessResult(p);      // Comment this if individual processor output is to be removed
     }
-    System.out.println("\n TOTAL TIME: "+global_ticks+"\t| NUMBER OF PROCESSES: "+finished_processes.size()+" \t | \t AVERAGE WAITING TIME: "+calcWaitTime(finished_processes)+" |");
+    System.out.println("\nTOTAL TIME: "+global_ticks+"\t| NUMBER OF PROCESSES: "+finished_processes.size()+" \t|\t AVERAGE WAITING TIME: "+calcWaitTime(finished_processes)+" |");
 	}
 
 
+  /* Calculates the average time spent waiting for all processes */
   double calcWaitTime(ArrayList<ScheduledProcess> processes) {
     int totalWait = 0;
     int totalCpu = 0;
     int processAmount = processes.size();
     for (ScheduledProcess p : processes) {
-      totalWait += p.totalWaitingTime; 
+      totalWait += p.totalWaitingTime;
     }
-    double average = totalWait / processAmount; 
+    double average = totalWait / processAmount;
     return average;
-  } 
+  }
 
- 
+
   /**
    * Prints a process and its attributes.
    */
@@ -210,17 +214,18 @@ public class RandomScheduling {       // Fix typo in name
   }
 
 
+  /* Calculates the total average for the total run of simulations */
   static void printTotalAverage(ArrayList<int[]> results, int simulations, boolean isPreemptive) {
-    // Sum the values 
+    // Sum the values
     // int[3] = [ TIME,  PROCESSES,   WAIT ]
     double time = 0;
     double processes = 0;
     double wait = 0;
     String preemptive = "NON-PREEMPTIVE";
     for (int[] a : results) {
-      time += a[0]; 
-      processes += a[1]; 
-      wait += a[2]; 
+      time += a[0];
+      processes += a[1];
+      wait += a[2];
     }
     time /= simulations;
     processes /= simulations;
@@ -230,20 +235,18 @@ public class RandomScheduling {       // Fix typo in name
   }
 
 
-
-
+  // ===========================
 
   // MAIN METHOD
-
 
 	public static void main(String args[]) throws InterruptedException {
 
     ArrayList<int[]> results = new ArrayList<int[]>();
 
-    final long rngSeed = 19990520;
+    final long rngSeed = 990520;
 		RandomScheduling scheduler = new RandomScheduling(rngSeed);
-		
-		final int numSimulations = 5;
+
+		final int numSimulations = 50;
 		final int numProcesses = 10;
 		final int minBurstTime = 2;
 		final int maxBurstTime = 10;
@@ -264,9 +267,11 @@ public class RandomScheduling {       // Fix typo in name
 			}
     printTotalAverage(results, numSimulations, isPreemptive);
     results.clear();  // Clear before running the rest of the simulations with the second preemption option
-		}		
-		
+		}
+
 	}
+
+
 
 
 
@@ -279,10 +284,10 @@ public class RandomScheduling {       // Fix typo in name
    * therefore I had this approach in mind as well
    */
   ScheduledProcess processSwap(ScheduledProcess p, double probArrival) {
-    double rand = rng.nextDouble(); 
-    double probability = 1 - probArrival; 
+    double rand = rng.nextDouble();
+    double probability = 1 - probArrival;
     if (rand < probability) {
-      // CODE TO PREEMPT CURRENT PROCESS AND RETURN ANOTHER  } 
+      // CODE TO PREEMPT CURRENT PROCESS AND RETURN ANOTHER  }
     }
     return p;
   }
