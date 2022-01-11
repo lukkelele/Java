@@ -1,10 +1,12 @@
 import java.util.Random;
 
+
+
 /*
  * File:	MultithreadedService.java
- * Course: 	20HT - Operating Systems - 1DV512
- * Author: 	*State your name and LNU student ID here! (e.g., ab222cd)*
- * Date: 	December 2020
+ * Course: 	21HT - Operating Systems - 1DV512
+ * Author: Lukas Gunnarsson	
+ * Date: 	January 2022
  */
 
 // TODO: put this source code file into a new Java package with meaningful name (e.g., dv512.YourStudentID)!
@@ -16,6 +18,9 @@ import java.util.Random;
 
 public class MultithreadedService {
 
+  int current_tasks = 0;
+  int[] queue = new int[numTasks];          // Create queue with the size of allowed tasks
+
     // TODO: implement a nested public class titled Task here
     // which must have an integer ID and specified burst time (duration) in milliseconds,
     // see below
@@ -23,10 +28,26 @@ public class MultithreadedService {
     // As the task is being executed for the specified burst time, 
     // it is expected to simply go to sleep every X milliseconds (specified below)
 
+  public class Task {
+    int id;
+    int burst;
+    int time_spent;
+   
+    public Task() {
+      this.id = ++current_tasks;
+      this.burst = generateBurst();
+      this.time_spent = 0;
+      queue[this.id-1] = this;      // Add task to queue when created
+    }
+
+    int generateBurst() {
+      return rng.nextInt((maxBurstTimeMs-minBurstTimeMs))+minBurstTimeMs;    
+    }
+
+  }
 
     // Random number generator that must be used for the simulation
 	Random rng;
-
     // ... add further fields, methods, and even classes, if necessary
     
 
@@ -37,6 +58,7 @@ public class MultithreadedService {
 
 	public void reset() {
 		// TODO - remove any information from the previous simulation, if necessary
+      current_tasks = 0;
     }
     
 
@@ -73,7 +95,7 @@ public class MultithreadedService {
         // 2. Afterwards, print the list of tasks IDs for the tasks which were currently
         // executing when the simulation was finished/interrupted
         
-        System.out.println("Waiting tasks:")
+        System.out.println("Waiting tasks:");
         // 3. Finally, print the list of tasks IDs for the tasks which were waiting for execution,
         // but were never started as the simulation was finished/interrupted
 	}
@@ -85,7 +107,7 @@ public class MultithreadedService {
     // you are allowed to add those to the signature of this method
     public static void main(String args[]) {
 		// TODO: replace the seed value below with your birth date, e.g., "20001001"
-		final long rngSeed = 00000000;  
+		final long rngSeed = 19990520;  
 				
         // Do not modify the code below — instead, complete the implementation
         // of other methods!
