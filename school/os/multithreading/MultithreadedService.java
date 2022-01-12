@@ -1,5 +1,5 @@
 import java.util.Random;
-
+import java.util.concurrent.Executors;
 
 
 /*
@@ -19,7 +19,8 @@ import java.util.Random;
 public class MultithreadedService {
 
   int current_tasks = 0;
-  int[] queue = new int[numTasks];          // Create queue with the size of allowed tasks
+  Task[] queue = new Task[numTasks];          // Create queue with the size of allowed tasks
+  ExecutorService threadpool;          // Pool of threads
 
     // TODO: implement a nested public class titled Task here
     // which must have an integer ID and specified burst time (duration) in milliseconds,
@@ -43,8 +44,9 @@ public class MultithreadedService {
     int generateBurst() {
       return rng.nextInt((maxBurstTimeMs-minBurstTimeMs))+minBurstTimeMs;    
     }
-
   }
+
+
 
     // Random number generator that must be used for the simulation
 	Random rng;
@@ -55,12 +57,32 @@ public class MultithreadedService {
         this.rng = new Random(rngSeed);
     }
 
-
+  /* 
+   * Resets all necessary elements to their initial states.
+   */
 	public void reset() {
-		// TODO - remove any information from the previous simulation, if necessary
-      current_tasks = 0;
+      current_tasks = 0;                                              // Reset task counter
+      queue = new int[numTasks];                                      // Create new empty queue
+      threadpool = Executors.newFixedThreadPool(numThreads);          // New pool of threads
     }
-    
+   
+  /* 
+   * Pick a task randomly from the queue.
+   */
+  public Task pickTask(Task[] tasks) {
+    Task t;
+    while (tasks[rng.nextInt(numTasks)] == null) {  // Make sure to pick a task to return
+      t = tasks[rng.nextInt(numTasks)]; 
+    }
+    return t;
+  }
+
+  /* 
+   * Pass task to a thread.
+   */
+  public void passTask(Task t) {
+    threadpool.execute(t);    
+  }
 
     // If the implementation requires your code to throw some exceptions, 
     // you are allowed to add those to the signature of this method
@@ -81,6 +103,7 @@ public class MultithreadedService {
         // and it should assign them to threads in the same sequence (rather any other scheduling approach)
         // 5. When the simulation time is up, it should make sure to stop all of the currently executing
         // and waiting threads!
+        
 
     }
 
