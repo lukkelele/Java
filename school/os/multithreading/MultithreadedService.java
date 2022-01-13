@@ -1,6 +1,7 @@
 import java.util.Random;
 import java.util.concurrent.Executors;
-
+import java.util.time;
+import java.util.ArrayList;
 
 /*
  * File:	MultithreadedService.java
@@ -19,7 +20,7 @@ import java.util.concurrent.Executors;
 public class MultithreadedService {
 
   int current_tasks = 0;
-  Task[] queue = new Task[numTasks];          // Create queue with the size of allowed tasks
+  ArrayList<Task> queue = new ArrayList<Task>();
   ExecutorService threadpool;          // Pool of threads
 
     // TODO: implement a nested public class titled Task here
@@ -38,14 +39,28 @@ public class MultithreadedService {
       this.id = ++current_tasks;
       this.burst = generateBurst();
       this.time_spent = 0;
-      queue[this.id-1] = this;      // Add task to queue when created
+      queue.add(this);            // Add task to queue
     }
 
+
     int generateBurst() {
-      return rng.nextInt((maxBurstTimeMs-minBurstTimeMs))+minBurstTimeMs;    
+      return rng.nextInt((maxBurstTimeMs-minBurstTimeMs))+minBurstTimeMs;     // Random number between allowed interval
     }
   }
 
+  /*  
+   * For executing tasks.
+   */
+  void sleep(Task t) {
+    long current_time;
+    long start_t = System.nanoTime();
+    int difference = 0;
+    while (t.time_spent < t.burst) {
+      current_time = System.nanoTime(); 
+      difference = current_time - start_t;
+      t.time_spent = difference;
+    }
+  }
 
 
     // Random number generator that must be used for the simulation
@@ -90,6 +105,7 @@ public class MultithreadedService {
         final int numThreads, final int numTasks,
         final long minBurstTimeMs, final long maxBurstTimeMs, final long sleepTimeMs) {
         reset();
+        LocalTime clock = new LocalTime();
 
         // TODO:
         // 1. Run the simulation for the specified time, totalSimulationTimeMs
@@ -103,7 +119,13 @@ public class MultithreadedService {
         // and it should assign them to threads in the same sequence (rather any other scheduling approach)
         // 5. When the simulation time is up, it should make sure to stop all of the currently executing
         // and waiting threads!
-        
+        long start_time = clock.toSecondOfDay() * 1000;   // in milliseconds 
+        long time_end = start_time + totalSimulationTimeMs;
+        while (start_time < time_end) {
+
+
+          start_time = clock.toSecondOfDay() * 1000; 
+        }
 
     }
 
