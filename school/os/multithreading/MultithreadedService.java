@@ -35,8 +35,8 @@ public class MultithreadedService {
     int burst;
     int time_spent;
    
-    public Task() {
-      this.id = ++current_tasks;
+    public Task(int id) {
+      this.id = id;
       this.burst = generateBurst();
       this.time_spent = 0;
       queue.add(this);            // Add task to queue
@@ -53,12 +53,12 @@ public class MultithreadedService {
    */
   void sleep(Task t) {
     long current_time;
+    long difference = 0;
     long start_t = System.nanoTime();
-    int difference = 0;
     while (t.time_spent < t.burst) {
       current_time = System.nanoTime(); 
       difference = current_time - start_t;
-      t.time_spent = difference;
+      t.time_spent = difference / 1000;
     }
   }
 
@@ -77,17 +77,18 @@ public class MultithreadedService {
    */
 	public void reset() {
       current_tasks = 0;                                              // Reset task counter
-      queue = new int[numTasks];                                      // Create new empty queue
+      queue.clear();
       threadpool = Executors.newFixedThreadPool(numThreads);          // New pool of threads
     }
    
   /* 
    * Pick a task randomly from the queue.
    */
-  public Task pickTask(Task[] tasks) {
+  public Task pickTask(ArrayList<Task> tasks) {
     Task t;
-    while (tasks[rng.nextInt(numTasks)] == null) {  // Make sure to pick a task to return
-      t = tasks[rng.nextInt(numTasks)]; 
+    if (tasks.size() >= 0) {
+      random_num = rng.nextInt(tasks.size());         // Get a number between 0 and length of queue
+      t = tasks.get(random_num);                      // Gets a random task from the queue with the provided number from above
     }
     return t;
   }
@@ -119,8 +120,15 @@ public class MultithreadedService {
         // and it should assign them to threads in the same sequence (rather any other scheduling approach)
         // 5. When the simulation time is up, it should make sure to stop all of the currently executing
         // and waiting threads!
+        
         long start_time = clock.toSecondOfDay() * 1000;   // in milliseconds 
         long time_end = start_time + totalSimulationTimeMs;
+        // Create tasks
+        for (int k = 0 ; k < numTasks ; k++) {
+          Task t = new Task(k);
+          queue.add(t);
+        }
+
         while (start_time < time_end) {
 
 
