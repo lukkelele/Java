@@ -25,6 +25,7 @@ public class MultithreadedService {
 
   int current_tasks = 0;
   ArrayList<Task> queue = new ArrayList<Task>();
+  ArrayList<Task> completed_tasks = new ArrayList<Task>();
   ExecutorService executor;          // Pool of threads --> ADD NUMTHREADS AS
   ThreadPoolExecutor threadpool;
 
@@ -57,33 +58,35 @@ public class MultithreadedService {
       double starting_time = getCurrentTimeMs();
       try {
         sleep(this);
-        if (this.time_spent >= this.burst) {
-          System.out.println("TASK "+this.id+" DONE!");
-          throw new InterruptedException();
-        }
+        displayTaskInfo(this);
         if (Thread.interrupted()) {
           throw new InterruptedException();
         }
       }
       catch (InterruptedException e) {
         System.out.println("Thread interrupted! ----> "+this.id);
+        displayTaskInfo(this);
       }
     }
-
   }
 
   /*  
    * For executing tasks.
    */
   void sleep(Task t) throws InterruptedException {
-    TimeUnit.MILLISECONDS.sleep(t.burst);
-  }
+    double start = getCurrentTimeMs();
+    try {
+      TimeUnit.MILLISECONDS.sleep(t.burst);
+      t.time_spent = t.burst;
+      queue.remove(t);
+      completed_tasks.add(t);
+    } catch (InterruptedException e) {
+      t.time_spent = (int)(getCurrentTimeMs() - start);
+    }
+    }
 
 
-    // Random number generator that must be used for the simulation
 	Random rng;
-    // ... add further fields, methods, and even classes, if necessary
-    
 
 	public MultithreadedService (long rngSeed) {
         this.rng = new Random(rngSeed);
@@ -97,22 +100,11 @@ public class MultithreadedService {
 	public void reset(int numThreads) {
       current_tasks = 0;                                      // Reset task counter
       queue.clear();
+      completed_tasks.clear();
       executor = Executors.newFixedThreadPool(numThreads);    // New pool of threads
       threadpool = (ThreadPoolExecutor) executor;             // Cast executor to ThreadPoolExecutor to gather pooldata
     }
    
-  /* 
-   * Pick a task randomly from the queue.
-   */
-  public Task pickTask(ArrayList<Task> tasks) {
-    Task t;
-    if (tasks.size() >= 0) {
-      int random_num = rng.nextInt(tasks.size());                 // Get a number between 0 and length of queue
-      t = tasks.get(random_num);                              // Gets a random task from the queue with the provided number from above
-      return t;
-    }
-    return null;
-  }
 
   /*
    * Count active threads.
@@ -121,13 +113,23 @@ public class MultithreadedService {
     return threadpool.getActiveCount();
   }
 
-  public int getTotalThreads() {
+  /**
+   * Returns currently executing threads. 
+   */
+  public int getExecutingThreads() {
     return threadpool.getPoolSize();
   }
+
 
   public int getInactiveThreads() {
     return (threadpool.getPoolSize() - threadpool.getActiveCount());
   }
+
+
+  public void displayResults() {
+    System.out.println("Active threads: "+getActiveThreads());
+  }
+
 
   public int[] getTaskInfo(Task t) {
     int id = t.id;
@@ -137,6 +139,7 @@ public class MultithreadedService {
     int[] s = {id, burst, worktime, time_left};
     return s;
   }
+
 
   public void displayTaskInfo(Task t) {
     int[] taskInfo = getTaskInfo(t);
@@ -149,26 +152,35 @@ public class MultithreadedService {
    * Pass task to a thread.
    */
   public void passTask(Task t) {
-    executor.execute(t);    
+    executor.execute(t);
   }
+
 
   public Task getRandomTask() {
     Task t = queue.get(rng.nextInt(0, queue.size()));
     return t;
   }
 
-    // If the implementation requires your code to throw some exceptions, 
-    // you are allowed to add those to the signature of this method
+
+  public Task getTask() {
+    if (queue.size() > 0) {
+      return queue.get(0);  // Get index 0 since completed tasks get removed from queue
+    } else {
+      return null;
+    }
+  }
+
+
     public void runNewSimulation(final long totalSimulationTimeMs,
         final int numThreads, final int numTasks,
         final long minBurstTimeMs, final long maxBurstTimeMs, final long sleepTimeMs) {
         reset(numThreads);
 
-        System.out.println("POOL SIZE: "+threadpool.getPoolSize()+"\nACTIVE THREADS: "+threadpool.getActiveCount()+"\nCORE POOLSIZE: "+threadpool.getCorePoolSize());
+        System.out.println("ACTIVE THREADS: "+threadpool.getActiveCount()+"\nCORE POOLSIZE: "+threadpool.getCorePoolSize());
         
 
 
-        double start_time = getCurrentTimeMs();   // in milliseconds 
+        double start_time = getCurrentTimeMs();
         double time_end = start_time + totalSimulationTimeMs;
         
         // Create tasks
@@ -179,12 +191,14 @@ public class MultithreadedService {
         start_time = getCurrentTimeMs(); 
         System.out.println("STARTING TIME = "+start_time+"ms\nStart - End = "+(time_end - start_time)+"ms");
         while (start_time < time_end) {
-          passTask(getRandomTask());
+          passTask(getTask());
           start_time = getCurrentTimeMs();
         }
+        displayResults();
         System.out.println("15 seconds spent!\n");
 
     }
+
 
     public double getCurrentTimeMs() {
       return LocalTime.now().toNanoOfDay() / Math.pow(10, 6);
