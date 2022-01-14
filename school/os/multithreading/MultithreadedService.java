@@ -4,6 +4,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.time.LocalTime;
 import java.util.ArrayList;
 
 /*
@@ -39,16 +40,16 @@ public class MultithreadedService {
     int burst;
     int time_spent;
    
-    public Task(int id, int maxBurstTime, int minBurstTime) {
+    public Task(int id, long maxBurstTime, long minBurstTime) {
       this.id = id;
-      this.burst = generateBurst(maxBurstTime, minBurstTime);
+      this.burst = (int) generateBurst(maxBurstTime, minBurstTime);
       this.time_spent = 0;
       queue.add(this);            // Add task to queue
     }
 
 
-    int generateBurst(int maxBurstTimeMs, int minBurstTimeMs) {
-      return rng.nextInt((maxBurstTimeMs-minBurstTimeMs))+minBurstTimeMs;     // Random number between allowed interval
+    long generateBurst(long maxBurstTimeMs, long minBurstTimeMs) {
+      return rng.nextLong((maxBurstTimeMs-minBurstTimeMs))+minBurstTimeMs;     // Random number between allowed interval
     }
 
     public void run() {
@@ -86,7 +87,7 @@ public class MultithreadedService {
   /* 
    * Resets all necessary elements to their initial states.
    */
-	public void reset() {
+	public void reset(int numThreads) {
       current_tasks = 0;                                      // Reset task counter
       queue.clear();
       executor = Executors.newFixedThreadPool(numThreads);    // New pool of threads
@@ -99,10 +100,11 @@ public class MultithreadedService {
   public Task pickTask(ArrayList<Task> tasks) {
     Task t;
     if (tasks.size() >= 0) {
-      random_num = rng.nextInt(tasks.size());                 // Get a number between 0 and length of queue
+      int random_num = rng.nextInt(tasks.size());                 // Get a number between 0 and length of queue
       t = tasks.get(random_num);                              // Gets a random task from the queue with the provided number from above
+      return t;
     }
-    return t;
+    return null;
   }
 
   /*
@@ -141,8 +143,7 @@ public class MultithreadedService {
     public void runNewSimulation(final long totalSimulationTimeMs,
         final int numThreads, final int numTasks,
         final long minBurstTimeMs, final long maxBurstTimeMs, final long sleepTimeMs) {
-        reset();
-        LocalTime clock = new LocalTime();
+        reset(numThreads);
 
         // TODO:
         // 1. Run the simulation for the specified time, totalSimulationTimeMs
@@ -156,21 +157,27 @@ public class MultithreadedService {
         // and it should assign them to threads in the same sequence (rather any other scheduling approach)
         // 5. When the simulation time is up, it should make sure to stop all of the currently executing
         // and waiting threads!
+        double start_time = getCurrentTimeMs();   // in milliseconds 
+        double time_end = start_time + totalSimulationTimeMs;
+        System.out.println("END TIME = "+time_end);
         
-        long start_time = clock.toSecondOfDay() * 1000;   // in milliseconds 
-        long time_end = start_time + totalSimulationTimeMs;
         // Create tasks
         for (int k = 0 ; k < numTasks ; k++) {
-          Task t = new Task(k);
+          Task t = new Task(k, maxBurstTimeMs, minBurstTimeMs);
           queue.add(t);
         }
-
+        start_time = getCurrentTimeMs(); 
+        System.out.println("STARTING TIME = "+start_time);
+        System.out.println("Start - End = "+(time_end - start_time));
         while (start_time < time_end) {
 
 
-          start_time = clock.toSecondOfDay() * 1000; 
         }
 
+    }
+
+    public double getCurrentTimeMs() {
+      return LocalTime.now().toNanoOfDay() / Math.pow(10, 6);
     }
 
 
