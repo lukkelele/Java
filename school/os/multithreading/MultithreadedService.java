@@ -25,7 +25,7 @@ public class MultithreadedService {
 
   int current_tasks = 0;
   ArrayList<Task> queue = new ArrayList<Task>();
-  ExecutorService executor;          // Pool of threads
+  ExecutorService executor;          // Pool of threads --> ADD NUMTHREADS AS
   ThreadPoolExecutor threadpool;
 
     // TODO: implement a nested public class titled Task here
@@ -55,7 +55,7 @@ public class MultithreadedService {
     public void run() {
 
       try {
-        System.out.println("TASK RUNNING\nid: "+this.id);
+        displayTaskInfo(this);
         if (Thread.interrupted()) {
           throw new InterruptedException();
         }
@@ -82,6 +82,8 @@ public class MultithreadedService {
 
 	public MultithreadedService (long rngSeed) {
         this.rng = new Random(rngSeed);
+        this.executor = Executors.newFixedThreadPool(4);          // Pool of threads --> ADD NUMTHREADS AS ATTRIBUTE
+        this.threadpool = (ThreadPoolExecutor) executor;
     }
 
   /* 
@@ -131,6 +133,13 @@ public class MultithreadedService {
     return s;
   }
 
+  public void displayTaskInfo(Task t) {
+    int[] taskInfo = getTaskInfo(t);
+    String s = "ID: " + taskInfo[0] + "\nBURST: " + taskInfo[1] + "\nWORKTIME: " + taskInfo[2] + "\nTIME LEFT: " + taskInfo[3];
+    System.out.println(s);
+  }
+
+
   /* 
    * Pass task to a thread.
    */
@@ -144,6 +153,9 @@ public class MultithreadedService {
         final int numThreads, final int numTasks,
         final long minBurstTimeMs, final long maxBurstTimeMs, final long sleepTimeMs) {
         reset(numThreads);
+
+        System.out.println("POOL SIZE: "+threadpool.getPoolSize()+"\nACTIVE THREADS: "+threadpool.getActiveCount()+"\nCORE POOLSIZE: "+threadpool.getCorePoolSize());
+        
 
         // TODO:
         // 1. Run the simulation for the specified time, totalSimulationTimeMs
@@ -159,7 +171,6 @@ public class MultithreadedService {
         // and waiting threads!
         double start_time = getCurrentTimeMs();   // in milliseconds 
         double time_end = start_time + totalSimulationTimeMs;
-        System.out.println("END TIME = "+time_end);
         
         // Create tasks
         for (int k = 0 ; k < numTasks ; k++) {
@@ -167,12 +178,12 @@ public class MultithreadedService {
           queue.add(t);
         }
         start_time = getCurrentTimeMs(); 
-        System.out.println("STARTING TIME = "+start_time);
-        System.out.println("Start - End = "+(time_end - start_time));
+        System.out.println("STARTING TIME = "+start_time+"ms\nStart - End = "+(time_end - start_time)+"ms");
         while (start_time < time_end) {
-
-
+          executor.execute(queue.get(0));
+          start_time = getCurrentTimeMs();
         }
+        System.out.println("15 seconds spent!\n");
 
     }
 
