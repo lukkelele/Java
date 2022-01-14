@@ -53,9 +53,14 @@ public class MultithreadedService {
     }
 
     public void run() {
-
+      displayTaskInfo(this);
+      double starting_time = getCurrentTimeMs();
       try {
-        displayTaskInfo(this);
+        sleep(this);
+        if (this.time_spent >= this.burst) {
+          System.out.println("TASK "+this.id+" DONE!");
+          throw new InterruptedException();
+        }
         if (Thread.interrupted()) {
           throw new InterruptedException();
         }
@@ -147,6 +152,11 @@ public class MultithreadedService {
     executor.execute(t);    
   }
 
+  public Task getRandomTask() {
+    Task t = queue.get(rng.nextInt(0, queue.size()));
+    return t;
+  }
+
     // If the implementation requires your code to throw some exceptions, 
     // you are allowed to add those to the signature of this method
     public void runNewSimulation(final long totalSimulationTimeMs,
@@ -157,18 +167,7 @@ public class MultithreadedService {
         System.out.println("POOL SIZE: "+threadpool.getPoolSize()+"\nACTIVE THREADS: "+threadpool.getActiveCount()+"\nCORE POOLSIZE: "+threadpool.getCorePoolSize());
         
 
-        // TODO:
-        // 1. Run the simulation for the specified time, totalSimulationTimeMs
-        // 2. While the simulation is running, use a fixed thread pool with numThreads
-        // (see https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Executors.html#newFixedThreadPool(int) )
-        // to execute Tasks (implement the respective class, see above!)
-        // 3. The total maximum number of tasks is numTasks, 
-        // and each task has a burst time (duration) selected randomly
-        // between minBurstTimeMs and maxBurstTimeMs (inclusive)
-        // 4. The implementation should assign sequential task IDs to the created tasks (0, 1, 2...)
-        // and it should assign them to threads in the same sequence (rather any other scheduling approach)
-        // 5. When the simulation time is up, it should make sure to stop all of the currently executing
-        // and waiting threads!
+
         double start_time = getCurrentTimeMs();   // in milliseconds 
         double time_end = start_time + totalSimulationTimeMs;
         
@@ -180,7 +179,7 @@ public class MultithreadedService {
         start_time = getCurrentTimeMs(); 
         System.out.println("STARTING TIME = "+start_time+"ms\nStart - End = "+(time_end - start_time)+"ms");
         while (start_time < time_end) {
-          executor.execute(queue.get(0));
+          passTask(getRandomTask());
           start_time = getCurrentTimeMs();
         }
         System.out.println("15 seconds spent!\n");
