@@ -26,6 +26,7 @@ public class MultithreadedService {
   int current_tasks = 0;
   ArrayList<Task> queue = new ArrayList<Task>();
   ArrayList<Task> completed_tasks = new ArrayList<Task>();
+  ArrayList<Task> interrupted_tasks = new ArrayList<Task>();
   ExecutorService executor;          // Pool of threads --> ADD NUMTHREADS AS
   ThreadPoolExecutor threadpool;
 
@@ -40,6 +41,8 @@ public class MultithreadedService {
     int id;
     int burst;
     int time_spent;
+    double start;
+    double finish;
    
     public Task(int id, long maxBurstTime, long minBurstTime) {
       this.id = id;
@@ -57,6 +60,7 @@ public class MultithreadedService {
       displayTaskInfo(this);
       double starting_time = getCurrentTimeMs();
       try {
+
         sleep(this);
         if (Thread.interrupted()) {
           throw new InterruptedException();
@@ -72,15 +76,17 @@ public class MultithreadedService {
    * For executing tasks.
    */
   void sleep(Task t) throws InterruptedException {
-    double start = getCurrentTimeMs();
+    t.start = getCurrentTimeMs();
     try {
       TimeUnit.MILLISECONDS.sleep(t.burst);
+      t.finish = getCurrentTimeMs();
       t.time_spent = t.burst;
       queue.remove(0);
       completed_tasks.add(t);
       displayTaskInfo(t);
     } catch (InterruptedException e) {
-      t.time_spent = (int)(getCurrentTimeMs() - start);
+      t.time_spent = (int)(getCurrentTimeMs() - t.start);
+      t.finish = getCurrentTimeMs();
     }
     }
 
@@ -164,17 +170,15 @@ public class MultithreadedService {
   public Task getTask() {
     // Add functionality to detect if threads are active, adjust index
     int active_threads = getActiveThreads();
+    System.out.println("GETTING TASK BY INDEX ==> "+active_threads);
     return queue.get(active_threads);
   }
 
 
     public void runNewSimulation(final long totalSimulationTimeMs,
         final int numThreads, final int numTasks,
-        final long minBurstTimeMs, final long maxBurstTimeMs, final long sleepTimeMs) {
+        final long minBurstTimeMs, final long maxBurstTimeMs, final long sleepTimeMs) throws InterruptedException {
         reset(numThreads);
-
-        System.out.println("ACTIVE THREADS: "+threadpool.getActiveCount()+"\nCORE POOLSIZE: "+threadpool.getCorePoolSize());
-        
 
 
         double start_time = getCurrentTimeMs();
@@ -190,10 +194,9 @@ public class MultithreadedService {
         while (start_time < time_end) {
           passTask(getTask());
           start_time = getCurrentTimeMs();
+          System.out.println("ACTIVE THREADS: "+getActiveThreads());
+          TimeUnit.MILLISECONDS.sleep(500);
         }
-        System.out.println("-- Completed tasks = "+completed_tasks.size());
-        displayResults();
-        System.out.println("15 seconds spent!\n");
 
     }
 
@@ -204,18 +207,21 @@ public class MultithreadedService {
 
 
     public void printResults() {
-        // TODO:
-        System.out.println("Completed tasks:");
-        // 1. For each *completed* task, print its ID, burst time (duration),
-        // its start time (moment since the start of the simulation), and finish time
+        System.out.println("Completed tasks: "+completed_tasks.size());
+        for (Task t : completed_tasks) {
+          displayTaskInfo(t);
+        }
+        System.out.println("\n---------------");
         
-        System.out.println("Interrupted tasks:");
-        // 2. Afterwards, print the list of tasks IDs for the tasks which were currently
-        // executing when the simulation was finished/interrupted
+        System.out.println("Interrupted tasks: "+interrupted_tasks.size());
+        for (Task t : interrupted_tasks) {
+          displayTaskInfo(t);
+        }
         
-        System.out.println("Waiting tasks:");
-        // 3. Finally, print the list of tasks IDs for the tasks which were waiting for execution,
-        // but were never started as the simulation was finished/interrupted
+        System.out.println("Waiting tasks: "+queue.size());
+        for (Task t : queue) {
+          displayTaskInfo(t);
+        }
 	}
 
 
@@ -223,7 +229,7 @@ public class MultithreadedService {
 
     // If the implementation requires your code to throw some exceptions, 
     // you are allowed to add those to the signature of this method
-    public static void main(String args[]) {
+    public static void main(String args[]) throws InterruptedException {
 		// TODO: replace the seed value below with your birth date, e.g., "20001001"
 		final long rngSeed = 19990520;  
 				
