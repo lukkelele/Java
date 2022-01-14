@@ -1,7 +1,9 @@
 import java.util.Random;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.time;
+import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
 
 /*
@@ -32,36 +34,43 @@ public class MultithreadedService {
     // As the task is being executed for the specified burst time, 
     // it is expected to simply go to sleep every X milliseconds (specified below)
 
-  public class Task {
+  public class Task implements Runnable {
     int id;
     int burst;
     int time_spent;
    
-    public Task(int id) {
+    public Task(int id, int maxBurstTime, int minBurstTime) {
       this.id = id;
-      this.burst = generateBurst();
+      this.burst = generateBurst(maxBurstTime, minBurstTime);
       this.time_spent = 0;
       queue.add(this);            // Add task to queue
     }
 
 
-    int generateBurst() {
+    int generateBurst(int maxBurstTimeMs, int minBurstTimeMs) {
       return rng.nextInt((maxBurstTimeMs-minBurstTimeMs))+minBurstTimeMs;     // Random number between allowed interval
     }
+
+    public void run() {
+
+      try {
+        System.out.println("TASK RUNNING\nid: "+this.id);
+        if (Thread.interrupted()) {
+          throw new InterruptedException();
+        }
+      }
+      catch (InterruptedException e) {
+        System.out.println("Thread interrupted! ----> "+this.id);
+      }
+    }
+
   }
 
   /*  
    * For executing tasks.
    */
-  void sleep(Task t) {
-    long current_time;
-    long difference = 0;
-    long start_t = System.nanoTime();
-    while (t.time_spent < t.burst) {
-      current_time = System.nanoTime(); 
-      difference = current_time - start_t;
-      t.time_spent = difference / 1000;
-    }
+  void sleep(Task t) throws InterruptedException {
+    TimeUnit.MILLISECONDS.sleep(t.burst);
   }
 
 
@@ -111,12 +120,12 @@ public class MultithreadedService {
     return (threadpool.getPoolSize() - threadpool.getActiveCount());
   }
 
-  public String[] getTaskInfo(Task t) {
+  public int[] getTaskInfo(Task t) {
     int id = t.id;
     int burst = t.burst;
     int worktime = t.time_spent;
     int time_left = burst - worktime;
-    String[] s = {id, burst, worktime, time_left};
+    int[] s = {id, burst, worktime, time_left};
     return s;
   }
 
