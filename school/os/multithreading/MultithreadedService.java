@@ -58,14 +58,12 @@ public class MultithreadedService {
       double starting_time = getCurrentTimeMs();
       try {
         sleep(this);
-        displayTaskInfo(this);
         if (Thread.interrupted()) {
           throw new InterruptedException();
         }
       }
       catch (InterruptedException e) {
         System.out.println("Thread interrupted! ----> "+this.id);
-        displayTaskInfo(this);
       }
     }
   }
@@ -78,8 +76,9 @@ public class MultithreadedService {
     try {
       TimeUnit.MILLISECONDS.sleep(t.burst);
       t.time_spent = t.burst;
-      queue.remove(t);
+      queue.remove(0);
       completed_tasks.add(t);
+      displayTaskInfo(t);
     } catch (InterruptedException e) {
       t.time_spent = (int)(getCurrentTimeMs() - start);
     }
@@ -163,11 +162,9 @@ public class MultithreadedService {
 
 
   public Task getTask() {
-    if (queue.size() > 0) {
-      return queue.get(0);  // Get index 0 since completed tasks get removed from queue
-    } else {
-      return null;
-    }
+    // Add functionality to detect if threads are active, adjust index
+    int active_threads = getActiveThreads();
+    return queue.get(active_threads);
   }
 
 
@@ -188,12 +185,13 @@ public class MultithreadedService {
           Task t = new Task(k, maxBurstTimeMs, minBurstTimeMs);
           queue.add(t);
         }
-        start_time = getCurrentTimeMs(); 
-        System.out.println("STARTING TIME = "+start_time+"ms\nStart - End = "+(time_end - start_time)+"ms");
+
+        // Delegate tasks to the threads!!!!
         while (start_time < time_end) {
           passTask(getTask());
           start_time = getCurrentTimeMs();
         }
+        System.out.println("-- Completed tasks = "+completed_tasks.size());
         displayResults();
         System.out.println("15 seconds spent!\n");
 
