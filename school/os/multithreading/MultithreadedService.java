@@ -1,5 +1,6 @@
 import java.util.Random;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.time;
 import java.util.ArrayList;
 
@@ -21,7 +22,8 @@ public class MultithreadedService {
 
   int current_tasks = 0;
   ArrayList<Task> queue = new ArrayList<Task>();
-  ExecutorService threadpool;          // Pool of threads
+  ExecutorService executor;          // Pool of threads
+  ThreadPoolExecutor threadpool;
 
     // TODO: implement a nested public class titled Task here
     // which must have an integer ID and specified burst time (duration) in milliseconds,
@@ -76,9 +78,10 @@ public class MultithreadedService {
    * Resets all necessary elements to their initial states.
    */
 	public void reset() {
-      current_tasks = 0;                                              // Reset task counter
+      current_tasks = 0;                                      // Reset task counter
       queue.clear();
-      threadpool = Executors.newFixedThreadPool(numThreads);          // New pool of threads
+      executor = Executors.newFixedThreadPool(numThreads);    // New pool of threads
+      threadpool = (ThreadPoolExecutor) executor;             // Cast executor to ThreadPoolExecutor to gather pooldata
     }
    
   /* 
@@ -87,17 +90,41 @@ public class MultithreadedService {
   public Task pickTask(ArrayList<Task> tasks) {
     Task t;
     if (tasks.size() >= 0) {
-      random_num = rng.nextInt(tasks.size());         // Get a number between 0 and length of queue
-      t = tasks.get(random_num);                      // Gets a random task from the queue with the provided number from above
+      random_num = rng.nextInt(tasks.size());                 // Get a number between 0 and length of queue
+      t = tasks.get(random_num);                              // Gets a random task from the queue with the provided number from above
     }
     return t;
+  }
+
+  /*
+   * Count active threads.
+   */
+  public int getActiveThreads() {
+    return threadpool.getActiveCount();
+  }
+
+  public int getTotalThreads() {
+    return threadpool.getPoolSize();
+  }
+
+  public int getInactiveThreads() {
+    return (threadpool.getPoolSize() - threadpool.getActiveCount());
+  }
+
+  public String[] getTaskInfo(Task t) {
+    int id = t.id;
+    int burst = t.burst;
+    int worktime = t.time_spent;
+    int time_left = burst - worktime;
+    String[] s = {id, burst, worktime, time_left};
+    return s;
   }
 
   /* 
    * Pass task to a thread.
    */
   public void passTask(Task t) {
-    threadpool.execute(t);    
+    executor.execute(t);    
   }
 
     // If the implementation requires your code to throw some exceptions, 
