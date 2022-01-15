@@ -38,7 +38,7 @@ public class MultithreadedService {
 
         // Give each task a flag to indicate if its taken by a thread or not
         public Task(int id, long maxBurstTime, long minBurstTime) {
-            this.id = id+1;             // 1-30 for the different tasks instead of 0-29
+            this.id = id;
             this.burst = (int) generateBurst(maxBurstTime, minBurstTime);
             this.time_spent = 0;
             this.busy = false;
@@ -71,15 +71,19 @@ public class MultithreadedService {
     void sleep(Task t) throws InterruptedException {
         t.start = getCurrentTimeMs();
         try {
+            System.out.println(t.id+" zZzzZZzzZZZZzzzzZZzZZzzzZz");
+            queue.remove(t);
             TimeUnit.MILLISECONDS.sleep(t.burst);
-            completed_tasks.add(t);
+            completed_tasks.add(t);                 // When sleep is fully done, add to completed
             t.finish = getCurrentTimeMs();
             t.time_spent = t.burst;
             //displayTaskInfo(t);
         } catch (InterruptedException e) {
             t.time_spent = (int) (getCurrentTimeMs() - t.start);
             t.finish = getCurrentTimeMs();
+            System.out.println("Interrupted ==> "+t.id);
             interrupted_tasks.add(t);
+            queue.remove(t);
         }
     }
 
@@ -114,8 +118,15 @@ public class MultithreadedService {
      * Pass task to a thread.
      */
     public void passTask(Task t) {
-        queue.remove(t);
-        executor.execute(t);
+        if (t == null){
+        }
+        else {
+            if (t.busy == false) {
+                t.busy = true;
+                executor.execute(t);
+            }
+
+        }
     }
 
     public void interruptTasks() {
@@ -124,18 +135,17 @@ public class MultithreadedService {
 
     public Task getTask() {
         // Add functionality to detect if threads are active, adjust index
-        int k = getActiveThreads();
-        if (queue.size() == 0) { return null; }
+        int k = 0;
+        if (queue.size() == 0) return null;
         else {
             try {
                 Task task = queue.get(0);
-                if (task.busy) {
+                if (task.busy == true) {
                     task = queue.get(k++);
-                    System.out.println("K = "+k);
                 }
                 return task;
             } catch (IndexOutOfBoundsException e) {
-                System.out.println("Error -> "+e+"\nat getTask()!");
+                System.out.println("error");
                 return null;
             }
         }
@@ -147,18 +157,19 @@ public class MultithreadedService {
         final long minBurstTimeMs, final long maxBurstTimeMs, final long sleepTimeMs) throws InterruptedException {
 
         reset(numThreads);
-        int begin_time = LocalTime.now().toSecondOfDay();
         double start_time = getCurrentTimeMs();
         double time_end = start_time + totalSimulationTimeMs;
 
         // Create tasks
         queue = new ArrayList<Task>();
         for (int k = 0; k < numTasks; k++) {
-            Task t = new Task(k, maxBurstTimeMs, minBurstTimeMs);
+            Task t = new Task(k+1, maxBurstTimeMs, minBurstTimeMs);         // k+1 to make range go from 1-30 instead of 0-29
             queue.add(t);
         }
 
-
+        int begin_time = LocalTime.now().toSecondOfDay();
+        
+        // Main loop
         while (start_time <= time_end) {
             start_time = getCurrentTimeMs();
             while (getActiveThreads() < 4) {
@@ -170,19 +181,10 @@ public class MultithreadedService {
             }
         }
         interruptTasks();
-        sortCompleteTasks();
         System.out.println("TOTAL TIME IN SIMULATION: "+(LocalTime.now().toSecondOfDay() - begin_time));
-        //timer(start_time);
+    
     }
 
-    public void sortCompleteTasks() {
-        for (Task t : completed_tasks) {
-            if (t.time_spent != t.burst) {
-                completed_tasks.remove(t);
-                interrupted_tasks.add(t);
-            }
-        }
-    }
 
     public double getCurrentTimeMs() {
         return LocalTime.now().toNanoOfDay() / Math.pow(10, 6);
