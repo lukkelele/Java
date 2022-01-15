@@ -77,7 +77,7 @@ public class MultithreadedService {
             TimeUnit.MILLISECONDS.sleep(t.burst);
             t.finish = getCurrentTimeMs();
             t.time_spent = t.burst;
-            displayTaskInfo(t);
+            //displayTaskInfo(t);
         } catch (InterruptedException e) {
             t.time_spent = (int) (getCurrentTimeMs() - t.start);
             t.finish = getCurrentTimeMs();
@@ -107,8 +107,8 @@ public class MultithreadedService {
 
     public void displayTaskInfo(Task t) {
         int[] taskInfo = getTaskInfo(t);
-        String s = "ID: " + taskInfo[0] + "\nBURST: " + taskInfo[1] + "\nWORKTIME: " + taskInfo[2] + "\nTIME LEFT: "
-                + taskInfo[3]+"\n------------------";
+        String s = "ID: " + taskInfo[0] + " || BURST: " + taskInfo[1] + " || WORKTIME: " + taskInfo[2] + " || TIME LEFT: "
+                + taskInfo[3];
         System.out.println(s);
     }
 
@@ -128,18 +128,19 @@ public class MultithreadedService {
     public Task getTask() {
         // Add functionality to detect if threads are active, adjust index
         int k = getActiveThreads();
-        System.out.println("queue size= "+queue.size()+"\n active threads: "+getActiveThreads());
-        try {
-            if (getActiveThreads() == 0) k = 1;
-            Task task = queue.get(0);
-            if (task.busy) {
-                task = queue.get(k++);
-                System.out.println("K = "+k);
+        if (queue.size() == 0) { return null; }
+        else {
+            try {
+                Task task = queue.get(0);
+                if (task.busy) {
+                    task = queue.get(k++);
+                    System.out.println("K = "+k);
+                }
+                return task;
+            } catch (IndexOutOfBoundsException e) {
+                System.out.println("Error -> "+e+"\nat getTask()!");
+                return null;
             }
-            return task;
-        } catch (IndexOutOfBoundsException e) {
-            System.out.println("Error -> "+e+"\nat getTask()!");
-            return null;
         }
     }
 
