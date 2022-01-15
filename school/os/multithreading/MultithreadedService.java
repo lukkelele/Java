@@ -254,6 +254,7 @@ public class MultithreadedService {
     public void reset(int numThreads) {
         queue.clear();
         completed_tasks.clear();
+        interrupted_tasks.clear();
         executor = Executors.newFixedThreadPool(numThreads); // New pool of threads
         threadpool = (ThreadPoolExecutor) executor; // Cast executor to ThreadPoolExecutor to gather pooldata
         //System.out.println("----- RESET DONE -----");
