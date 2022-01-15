@@ -29,13 +29,7 @@ public class MultithreadedService {
     ExecutorService executor; // Pool of threads --> ADD NUMTHREADS AS
     ThreadPoolExecutor threadpool;
 
-    // TODO: implement a nested public class titled Task here
-    // which must have an integer ID and specified burst time (duration) in
-    // milliseconds,
-    // see below
-    // Add further fields and methods to it, if necessary
-    // As the task is being executed for the specified burst time,
-    // it is expected to simply go to sleep every X milliseconds (specified below)
+
 
     public class Task implements Runnable {
         int id;
@@ -51,7 +45,6 @@ public class MultithreadedService {
             this.burst = (int) generateBurst(maxBurstTime, minBurstTime);
             this.time_spent = 0;
             this.busy = false;
-            queue.add(this); // Add task to queue
         }
 
         long generateBurst(long maxBurstTimeMs, long minBurstTimeMs) {
@@ -70,6 +63,8 @@ public class MultithreadedService {
                 }
             } catch (InterruptedException e) {
                 System.out.println("Thread interrupted! ----> " + this.id);
+                interrupted_tasks.add(this);
+                //queue.remove(this);
             }
         }
     }
@@ -130,15 +125,12 @@ public class MultithreadedService {
     public Task getTask() {
         // Add functionality to detect if threads are active, adjust index
         int k = getActiveThreads();
+        System.out.println("queue size= "+queue.size());
         try {
             Task task = queue.get(k);
             if (task.busy) {
-                while (task.busy == true) {
-                    task = queue.get(k++);
-                }
+                task = queue.get(k++);
                 System.out.println("K = "+k);
-            } else {
-                task.busy = true;
             }
             return task;
         } catch (IndexOutOfBoundsException e) {
@@ -157,15 +149,18 @@ public class MultithreadedService {
         double time_end = start_time + totalSimulationTimeMs;
 
         // Create tasks
+        queue = new ArrayList<Task>();
         for (int k = 0; k < numTasks; k++) {
             Task t = new Task(k, maxBurstTimeMs, minBurstTimeMs);
             queue.add(t);
         }
 
+
         while (start_time < time_end) {
-            passTask(getTask());
-            TimeUnit.MILLISECONDS.sleep(20);
             start_time = getCurrentTimeMs();
+            while (getActiveThreads() < 4) {
+                passTask(getTask());
+            }
         }
 
     }
@@ -245,6 +240,7 @@ public class MultithreadedService {
         current_tasks = 0; // Reset task counter
         queue.clear();
         completed_tasks.clear();
+        System.out.println("Reset stats:\nqueue SIZE: "+queue.size()+"\ncompleted tasks size: "+completed_tasks.size());
         executor = Executors.newFixedThreadPool(numThreads); // New pool of threads
         threadpool = (ThreadPoolExecutor) executor; // Cast executor to ThreadPoolExecutor to gather pooldata
     }
