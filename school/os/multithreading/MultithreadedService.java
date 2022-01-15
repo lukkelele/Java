@@ -75,6 +75,7 @@ public class MultithreadedService {
         t.start = getCurrentTimeMs();
         try {
             TimeUnit.MILLISECONDS.sleep(t.burst);
+            completed_tasks.add(t);
             t.finish = getCurrentTimeMs();
             t.time_spent = t.burst;
             //displayTaskInfo(t);
@@ -107,8 +108,8 @@ public class MultithreadedService {
 
     public void displayTaskInfo(Task t) {
         int[] taskInfo = getTaskInfo(t);
-        String s = "ID: " + taskInfo[0] + " || BURST: " + taskInfo[1] + " || WORKTIME: " + taskInfo[2] + " || TIME LEFT: "
-                + taskInfo[3];
+        String s = "ID: \t" + taskInfo[0] + "    ||  BURST: " + taskInfo[1] + "   ||  TIME SPENT: " + taskInfo[2] + "   ||  TIME LEFT: "
+                + taskInfo[3]+" ";
         System.out.println(s);
     }
 
@@ -116,9 +117,8 @@ public class MultithreadedService {
      * Pass task to a thread.
      */
     public void passTask(Task t) {
-        executor.execute(t);
         queue.remove(t);
-        completed_tasks.add(t);
+        executor.execute(t);
     }
 
     public void interruptTasks() {
@@ -171,15 +171,21 @@ public class MultithreadedService {
                 interruptTasks();
             }
         }
-        
-
+        sortCompleteTasks();
     }
 
+    public void sortCompleteTasks() {
+        for (Task t : completed_tasks) {
+            if (t.time_spent != t.burst) {
+                completed_tasks.remove(t);
+                interrupted_tasks.add(t);
+            }
+        }
+    }
 
     public double getCurrentTimeMs() {
         return LocalTime.now().toNanoOfDay() / Math.pow(10, 6);
     }
-
 
     public void printResults() {
         System.out.println("Completed tasks: " + completed_tasks.size());
@@ -200,6 +206,8 @@ public class MultithreadedService {
         }
         System.out.println("\n---------------");
     }
+
+
 
     public static void main(String args[]) throws InterruptedException {
 
@@ -238,11 +246,6 @@ public class MultithreadedService {
     }
 
 
-    public Task getRandomTask() {
-        Task t = queue.get(rng.nextInt(0, queue.size()));
-        return t;
-    }
-
     /*
      * Resets all necessary elements to their initial states.
      */
@@ -250,9 +253,9 @@ public class MultithreadedService {
         current_tasks = 0; // Reset task counter
         queue.clear();
         completed_tasks.clear();
-        System.out.println("Reset stats:\nqueue SIZE: "+queue.size()+"\ncompleted tasks size: "+completed_tasks.size());
         executor = Executors.newFixedThreadPool(numThreads); // New pool of threads
         threadpool = (ThreadPoolExecutor) executor; // Cast executor to ThreadPoolExecutor to gather pooldata
+        System.out.println("----- RESET DONE -----");
     }
 
 
