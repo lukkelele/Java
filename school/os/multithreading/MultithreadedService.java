@@ -15,18 +15,15 @@ import java.util.ArrayList;
 
 // TODO: put this source code file into a new Java package with meaningful name (e.g., dv512.YourStudentID)!
 
-// You can implement additional fields and methods in code below, but
-// you are not allowed to rename or remove any of it!
 
-// Additionally, please remember that you are not allowed to use any third-party libraries
 
 public class MultithreadedService {
 
-    int current_tasks = 0;
+    double time_begin;
     ArrayList<Task> queue = new ArrayList<Task>();
     ArrayList<Task> completed_tasks = new ArrayList<Task>();
     ArrayList<Task> interrupted_tasks = new ArrayList<Task>();
-    ExecutorService executor; // Pool of threads --> ADD NUMTHREADS AS
+    ExecutorService executor;
     ThreadPoolExecutor threadpool;
 
 
@@ -41,7 +38,7 @@ public class MultithreadedService {
 
         // Give each task a flag to indicate if its taken by a thread or not
         public Task(int id, long maxBurstTime, long minBurstTime) {
-            this.id = id;
+            this.id = id+1;             // 1-30 for the different tasks instead of 0-29
             this.burst = (int) generateBurst(maxBurstTime, minBurstTime);
             this.time_spent = 0;
             this.busy = false;
@@ -150,6 +147,7 @@ public class MultithreadedService {
         final long minBurstTimeMs, final long maxBurstTimeMs, final long sleepTimeMs) throws InterruptedException {
 
         reset(numThreads);
+        int begin_time = LocalTime.now().toSecondOfDay();
         double start_time = getCurrentTimeMs();
         double time_end = start_time + totalSimulationTimeMs;
 
@@ -168,10 +166,13 @@ public class MultithreadedService {
                 passTask(getTask());
             }
             if (start_time >= time_end) {
-                interruptTasks();
+                break;
             }
         }
+        interruptTasks();
         sortCompleteTasks();
+        System.out.println("TOTAL TIME IN SIMULATION: "+(LocalTime.now().toSecondOfDay() - begin_time));
+        //timer(start_time);
     }
 
     public void sortCompleteTasks() {
@@ -250,7 +251,6 @@ public class MultithreadedService {
      * Resets all necessary elements to their initial states.
      */
     public void reset(int numThreads) {
-        current_tasks = 0; // Reset task counter
         queue.clear();
         completed_tasks.clear();
         executor = Executors.newFixedThreadPool(numThreads); // New pool of threads
@@ -258,6 +258,10 @@ public class MultithreadedService {
         System.out.println("----- RESET DONE -----");
     }
 
+    public void timer(double starting_time) {
+        double total_time = getCurrentTimeMs() - starting_time;
+        System.out.println("Time since program start: "+total_time);
+    }
 
     /**
      * Returns currently executing threads.
