@@ -54,9 +54,7 @@ public class MultithreadedService {
 
         public void run() {
             displayTaskInfo(this);
-            double starting_time = getCurrentTimeMs();
             try {
-
                 sleep(this);
                 if (Thread.interrupted()) {
                     throw new InterruptedException();
@@ -83,6 +81,7 @@ public class MultithreadedService {
         } catch (InterruptedException e) {
             t.time_spent = (int) (getCurrentTimeMs() - t.start);
             t.finish = getCurrentTimeMs();
+            interrupted_tasks.add(t);
         }
     }
 
@@ -109,7 +108,7 @@ public class MultithreadedService {
     public void displayTaskInfo(Task t) {
         int[] taskInfo = getTaskInfo(t);
         String s = "ID: " + taskInfo[0] + "\nBURST: " + taskInfo[1] + "\nWORKTIME: " + taskInfo[2] + "\nTIME LEFT: "
-                + taskInfo[3];
+                + taskInfo[3]+"\n------------------";
         System.out.println(s);
     }
 
@@ -122,12 +121,17 @@ public class MultithreadedService {
         completed_tasks.add(t);
     }
 
+    public void interruptTasks() {
+        executor.shutdownNow();
+    }
+
     public Task getTask() {
         // Add functionality to detect if threads are active, adjust index
         int k = getActiveThreads();
-        System.out.println("queue size= "+queue.size());
+        System.out.println("queue size= "+queue.size()+"\n active threads: "+getActiveThreads());
         try {
-            Task task = queue.get(k);
+            if (getActiveThreads() == 0) k = 1;
+            Task task = queue.get(0);
             if (task.busy) {
                 task = queue.get(k++);
                 System.out.println("K = "+k);
@@ -156,12 +160,17 @@ public class MultithreadedService {
         }
 
 
-        while (start_time < time_end) {
+        while (start_time <= time_end) {
             start_time = getCurrentTimeMs();
             while (getActiveThreads() < 4) {
+                start_time = getCurrentTimeMs();
                 passTask(getTask());
             }
+            if (start_time >= time_end) {
+                interruptTasks();
+            }
         }
+        
 
     }
 
