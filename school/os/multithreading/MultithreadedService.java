@@ -71,7 +71,7 @@ public class MultithreadedService {
     void sleep(Task t) throws InterruptedException {
         t.start = getCurrentTimeMs();
         try {
-            System.out.println(t.id+" zZzzZZzzZZZZzzzzZZzZZzzzZz");
+            //System.out.println(t.id+" zZzzZZzzZZZZzzzzZZzZZzzzZz");
             queue.remove(t);
             TimeUnit.MILLISECONDS.sleep(t.burst);
             completed_tasks.add(t);                 // When sleep is fully done, add to completed
@@ -81,7 +81,6 @@ public class MultithreadedService {
         } catch (InterruptedException e) {
             t.time_spent = (int) (getCurrentTimeMs() - t.start);
             t.finish = getCurrentTimeMs();
-            System.out.println("Interrupted ==> "+t.id);
             interrupted_tasks.add(t);
             queue.remove(t);
         }
@@ -257,12 +256,12 @@ public class MultithreadedService {
         completed_tasks.clear();
         executor = Executors.newFixedThreadPool(numThreads); // New pool of threads
         threadpool = (ThreadPoolExecutor) executor; // Cast executor to ThreadPoolExecutor to gather pooldata
-        System.out.println("----- RESET DONE -----");
+        //System.out.println("----- RESET DONE -----");
     }
 
     public void timer(double starting_time) {
         double total_time = getCurrentTimeMs() - starting_time;
-        System.out.println("Time since program start: "+total_time);
+        System.out.println("-----\nTime since program start: "+total_time);
     }
 
     /**
