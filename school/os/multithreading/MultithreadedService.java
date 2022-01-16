@@ -6,16 +6,12 @@ import java.util.concurrent.TimeUnit;
 import java.time.LocalTime;
 import java.util.ArrayList;
 
-
 /*
  * File:	MultithreadedService.java
  * Course: 	21HT - Operating Systems - 1DV512
  * Author: Lukas Gunnarsson	
  * Date: 	January 2022
  */
-
-// TODO: put this source code file into a new Java package with meaningful name (e.g., dv512.YourStudentID)!
-
 
 
 public class MultithreadedService {
@@ -28,7 +24,6 @@ public class MultithreadedService {
     ThreadPoolExecutor threadpool;
 
 
-
     public class Task implements Runnable {
         int id;
         int burst;
@@ -37,7 +32,6 @@ public class MultithreadedService {
         double finish;
         boolean busy;
 
-        // Give each task a flag to indicate if its taken by a thread or not
         public Task(int id, long maxBurstTime, long minBurstTime) {
             this.id = id;
             this.burst = (int) generateBurst(maxBurstTime, minBurstTime);
@@ -49,7 +43,6 @@ public class MultithreadedService {
             return rng.nextLong((maxBurstTimeMs - minBurstTimeMs)) + minBurstTimeMs; // Random number between allowed
         }
 
-
         public void run() {
             displayTaskInfo(this);
             try {
@@ -58,7 +51,6 @@ public class MultithreadedService {
             }
         }
     }
-
 
     /*
      * For executing tasks.
@@ -78,7 +70,6 @@ public class MultithreadedService {
             queue.remove(t);
         }
     }
-
 
     Random rng;
 
@@ -142,15 +133,13 @@ public class MultithreadedService {
         } catch (IndexOutOfBoundsException e) {
             return null;
         }
-    }
-    
-
+    }    
 
     public void runNewSimulation(final long totalSimulationTimeMs,
         final int numThreads, final int numTasks,
         final long minBurstTimeMs, final long maxBurstTimeMs, final long sleepTimeMs) throws InterruptedException {
 
-        reset(numThreads);
+        reset(numThreads); 
         double start_time = getCurrentTimeMs();
         double time_end = start_time + totalSimulationTimeMs;
 
@@ -159,7 +148,6 @@ public class MultithreadedService {
             Task t = new Task(k+1, maxBurstTimeMs, minBurstTimeMs);         // k+1 to make range go from 1-30 instead of 0-29
             queue.add(t);
         }
-
         int begin_time = LocalTime.now().toSecondOfDay();
         
         // Main loop
@@ -175,9 +163,6 @@ public class MultithreadedService {
     
     }
 
-    /*
-     * Resets all necessary elements to their initial states.
-     */
     public void reset(int numThreads) {
         queue.clear();
         completed_tasks.clear();
@@ -192,13 +177,6 @@ public class MultithreadedService {
     public int getActiveThreads() {
         return threadpool.getActiveCount();
     }
-
-
-    public void displayResults() {
-        System.out.println("Active threads: " + getActiveThreads());
-    }
-
-
 
     public double getCurrentTimeMs() {
         return LocalTime.now().toNanoOfDay() / Math.pow(10, 6);
@@ -223,7 +201,6 @@ public class MultithreadedService {
         }
         System.out.println("\n---------------");
     }
-
 
 
     public static void main(String args[]) throws InterruptedException {
@@ -257,11 +234,5 @@ public class MultithreadedService {
         System.out.println("----------------------");
         System.out.println("Exiting...");
 
-        // If your program has not completed after the message printed above,
-        // it means that some threads are not properly stopped! -> this issue will
-        // affect the grade
     }
-
-
-
 }
