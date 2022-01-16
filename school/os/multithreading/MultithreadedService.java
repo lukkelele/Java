@@ -9,8 +9,8 @@ import java.util.ArrayList;
 /*
  * File:	MultithreadedService.java
  * Course: 	21HT - Operating Systems - 1DV512
- * Author: Lukas Gunnarsson	
- * Date: 	January 2022
+ * Author:  Lukas Gunnarsson	
+ * Date: 	16/1-2022
  */
 
 
