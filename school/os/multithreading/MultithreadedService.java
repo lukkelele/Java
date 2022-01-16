@@ -84,7 +84,7 @@ public class MultithreadedService {
 
     public MultithreadedService(long rngSeed) {
         this.rng = new Random(rngSeed);
-        this.executor = Executors.newFixedThreadPool(4); // Pool of threads --> ADD NUMTHREADS AS ATTRIBUTE
+        this.executor = Executors.newFixedThreadPool(4); 
         this.threadpool = (ThreadPoolExecutor) executor;
     }
 
@@ -110,38 +110,40 @@ public class MultithreadedService {
      * Pass task to a thread.
      */
     public void passTask(Task t) {
-        if (t == null){
-        }
+        if (t == null);
         else {
             if (t.busy == false) {
                 t.busy = true;
                 executor.execute(t);
             }
-
         }
     }
 
+    /**
+     *  Send kill signal to threads.
+     */
     public void interruptTasks() {
         executor.shutdownNow();
     }
 
+    /**
+     * Get a task that isn't taken already.
+     * 
+     * @return a task which hasn't been taken yet.
+     */
     public Task getTask() {
-        // Add functionality to detect if threads are active, adjust index
         int k = 0;
-        if (queue.size() == 0) return null;
-        else {
-            try {
-                Task task = queue.get(0);
-                if (task.busy == true) {
-                    task = queue.get(k++);
-                }
-                return task;
-            } catch (IndexOutOfBoundsException e) {
-                System.out.println("error");
-                return null;
+        try {
+            Task task = queue.get(0);
+            if (task.busy == true) {
+                task = queue.get(k++);
             }
+            return task;
+        } catch (IndexOutOfBoundsException e) {
+            return null;
         }
     }
+    
 
 
     public void runNewSimulation(final long totalSimulationTimeMs,
@@ -153,7 +155,6 @@ public class MultithreadedService {
         double time_end = start_time + totalSimulationTimeMs;
 
         // Create tasks
-        queue = new ArrayList<Task>();
         for (int k = 0; k < numTasks; k++) {
             Task t = new Task(k+1, maxBurstTimeMs, minBurstTimeMs);         // k+1 to make range go from 1-30 instead of 0-29
             queue.add(t);
@@ -168,14 +169,35 @@ public class MultithreadedService {
                 start_time = getCurrentTimeMs();
                 passTask(getTask());
             }
-            if (start_time >= time_end) {
-                break;
-            }
         }
-        interruptTasks();
+        interruptTasks();       // Kill all running tasks
         System.out.println("TOTAL TIME IN SIMULATION: "+(LocalTime.now().toSecondOfDay() - begin_time));
     
     }
+
+    /*
+     * Resets all necessary elements to their initial states.
+     */
+    public void reset(int numThreads) {
+        queue.clear();
+        completed_tasks.clear();
+        interrupted_tasks.clear();
+        executor = Executors.newFixedThreadPool(numThreads); // New pool of threads
+        threadpool = (ThreadPoolExecutor) executor;          // Cast executor to ThreadPoolExecutor to gather pooldata
+    }
+
+    /*
+     * Count active threads.
+     */
+    public int getActiveThreads() {
+        return threadpool.getActiveCount();
+    }
+
+
+    public void displayResults() {
+        System.out.println("Active threads: " + getActiveThreads());
+    }
+
 
 
     public double getCurrentTimeMs() {
@@ -241,43 +263,5 @@ public class MultithreadedService {
     }
 
 
-    /*
-     * Resets all necessary elements to their initial states.
-     */
-    public void reset(int numThreads) {
-        queue.clear();
-        completed_tasks.clear();
-        interrupted_tasks.clear();
-        executor = Executors.newFixedThreadPool(numThreads); // New pool of threads
-        threadpool = (ThreadPoolExecutor) executor; // Cast executor to ThreadPoolExecutor to gather pooldata
-        //System.out.println("----- RESET DONE -----");
-    }
-
-    public void timer(double starting_time) {
-        double total_time = getCurrentTimeMs() - starting_time;
-        System.out.println("-----\nTime since program start: "+total_time);
-    }
-
-    /**
-     * Returns currently executing threads.
-     */
-    public int getExecutingThreads() {
-        return threadpool.getPoolSize();
-    }
-
-    /*
-     * Count active threads.
-     */
-    public int getActiveThreads() {
-        return threadpool.getActiveCount();
-    }
-
-    public int getInactiveThreads() {
-        return (threadpool.getPoolSize() - threadpool.getActiveCount());
-    }
-
-    public void displayResults() {
-        System.out.println("Active threads: " + getActiveThreads());
-    }
 
 }
