@@ -54,13 +54,7 @@ public class MultithreadedService {
             displayTaskInfo(this);
             try {
                 sleep(this);
-                if (Thread.interrupted()) {
-                    throw new InterruptedException();
-                }
             } catch (InterruptedException e) {
-                System.out.println("Thread interrupted! ----> " + this.id);
-                interrupted_tasks.add(this);
-                //queue.remove(this);
             }
         }
     }
@@ -223,10 +217,6 @@ public class MultithreadedService {
         final long minBurstTimeMs = 1 * 1000L; // 1 second
         final long maxBurstTimeMs = 10 * 1000L; // 10 seconds
         final long sleepTimeMs = 100L; // 100 ms
-
-        System.out.println("Sleeping for 5 seconds..");
-        TimeUnit.SECONDS.sleep(5);
-        System.out.println("Beginning simulations!");
 
         for (int i = 0; i < numSimulations; i++) {
             System.out.println("Running simulation #" + i);
