@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit;
 import java.time.LocalTime;
 import java.util.ArrayList;
 
+
 /*
  * File:	MultithreadedService.java
  * Course: 	21HT - Operating Systems - 1DV512
@@ -71,13 +72,11 @@ public class MultithreadedService {
     void sleep(Task t) throws InterruptedException {
         t.start = getCurrentTimeMs();
         try {
-            //System.out.println(t.id+" zZzzZZzzZZZZzzzzZZzZZzzzZz");
             queue.remove(t);
             TimeUnit.MILLISECONDS.sleep(t.burst);
             completed_tasks.add(t);                 // When sleep is fully done, add to completed
             t.finish = getCurrentTimeMs();
             t.time_spent = t.burst;
-            //displayTaskInfo(t);
         } catch (InterruptedException e) {
             t.time_spent = (int) (getCurrentTimeMs() - t.start);
             t.finish = getCurrentTimeMs();
@@ -224,6 +223,10 @@ public class MultithreadedService {
         final long minBurstTimeMs = 1 * 1000L; // 1 second
         final long maxBurstTimeMs = 10 * 1000L; // 10 seconds
         final long sleepTimeMs = 100L; // 100 ms
+
+        System.out.println("Sleeping for 5 seconds..");
+        TimeUnit.SECONDS.sleep(5);
+        System.out.println("Beginning simulations!");
 
         for (int i = 0; i < numSimulations; i++) {
             System.out.println("Running simulation #" + i);
