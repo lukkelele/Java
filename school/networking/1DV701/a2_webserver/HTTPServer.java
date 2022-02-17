@@ -6,16 +6,14 @@ public class HTTPServer {
 
   static int port;
   static String path = "";
-  static ErrorHandler error;
 
   public HTTPServer(Socket s) {
   }
 
 
   public static boolean startup(String[] args) {
-    ErrorHandler error = new ErrorHandler();
-    System.out.println("Starting server...");
-    if (error.checkPortArg(args[0]) == false) return false;
+    System.out.println("!====================================!\nAttempting to start server..");
+    if (checkPortArg(args[0]) == false) return false;
     return true;
   }
 
@@ -26,9 +24,11 @@ public class HTTPServer {
     // second arg --> relative path --> String
     Scanner user = new Scanner(System.in);
     int c = 0;
-    System.out.println("Main execution..");
     boolean start = startup(args);
-    if (start == true) c = 1;
+    if (start == true) {
+      c = 1;
+      port = Integer.parseInt(args[0]);
+    };
 
     switch(c) {
       case 0:
