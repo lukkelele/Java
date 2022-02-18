@@ -6,6 +6,8 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Dictionary;
+import java.util.Hashtable;
 import java.util.Scanner;
 
 public class HTTPServer implements Runnable {
@@ -77,14 +79,26 @@ public class HTTPServer implements Runnable {
       BufferedReader in = getSocketInput();
       BufferedOutputStream out = getSocketOutput();
       PrintWriter output_terminal = new PrintWriter(connection.getOutputStream());          // true for enabling autoflush
-
       System.out.println("Connection established!");
-      while (true) {
-        String s = in.readLine();
-        if (s != null) System.out.println(s);
-      }
-     
+      // Read request
+      String s, method, version, version_no;
+      Dictionary dict = new Hashtable(); 
+      dict.put(1, "GET");
 
+      while ((s = in.readLine()) != null) {   // Read recieved data
+        System.out.println(s);
+      }
+      String[] header = s.split("\n");
+      String[] head = header[0].split("/");   // First line of the header [METHOD, VERSION, VERSION_NO]
+      method = head[0];
+      version = head[1];
+      version_no = head[2];
+
+      for (int k = 0 ; k < dict.size() ; k++) {
+        if (dict.get(k+1) == method) {
+          System.out.println("Verified type of method! ====> "+dict.get(k+1));
+        }
+      }
 
 
     } catch (IOException e) {
@@ -92,14 +106,12 @@ public class HTTPServer implements Runnable {
     }
   }
 
-  
-
 
   /**
    * Checks command line arguments if they are valid or not.
    */
   public static boolean startup(String[] args) {
-    System.out.println("!====================================!\nAttempting to start server..");
+    System.out.println("!====================================!\n\nAttempting to start server..");
     if (checkPortArg(args[0]) == false) return false;
     return true;
   }
