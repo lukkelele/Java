@@ -27,6 +27,12 @@ public class HTTPServer implements Runnable {
 
   public static void main(String[] args) {
       Scanner user = new Scanner(System.in);
+      path = args[1];
+      if (path.split("/").length > 1) {
+        System.out.println("DIRECTORY ACCESS RESTRICTED!");
+        path = "public";
+      }
+      System.out.println(port+" | "+path);
       int c = boot(args);
       switch(c) {
 
@@ -46,17 +52,17 @@ public class HTTPServer implements Runnable {
           // START SERVER
           // Runnable try/catch 
     try {   
-          System.out.println("Starting server on port "+port+"...");
-          ServerSocket serverConnection = new ServerSocket(port);     // Create socket for the server connection
-          System.out.println("New server socket created.");
-          System.out.println("Server socket: LISTENING ON PORT "+port);
-          Socket serverSocket = serverConnection.accept();                                  // Listen to chosen port and accept incoming connection
-          System.out.println("Connection established!");
-          HTTPServer server = new HTTPServer(serverSocket);       // Create server with the socket that is listening for a connection
- 
-          Thread server_thread = new Thread(server);                  // Add the newly created HTTPServer object to a runnable thread
-          server_thread.start();       // thread.start() to run the server on a separate thread to be able to manage it
+        // This infinite loop creates new threads if multiple connections are queueing at the chosen port
+        System.out.println("Starting server on port "+port+"...");
+        ServerSocket serverConnection = new ServerSocket(port);     // Create socket for the server connection
+        while (true) {
+            System.out.println("Server socket: LISTENING ON PORT "+port);
+            HTTPServer server = new HTTPServer(serverConnection.accept());       // Create server with the socket that is listening for a connection
 
+            System.out.println("Assigning connection to a separate thread..");
+            Thread server_thread = new Thread(server);                  // Add the newly created HTTPServer object to a runnable thread
+            server_thread.start();       // thread.start() to run the server on a separate thread to be able to manage it
+          }    
 
         } catch (Exception e) {
             System.out.println("Error: RUNNABLE TRY/CATCH CLAUSE\n"+e);
@@ -72,14 +78,14 @@ public class HTTPServer implements Runnable {
       BufferedOutputStream out = getSocketOutput();
       PrintWriter output_terminal = new PrintWriter(connection.getOutputStream());          // true for enabling autoflush
 
-      System.out.println("Server: RUNNING");
-      read_message(in);
-      output_terminal.println("Welcome!");
-
+      System.out.println("Connection established!");
       while (true) {
+        String s = in.readLine();
+        if (s != null) System.out.println(s);
       }
-      // GET shall only be handled
-      
+     
+
+
 
     } catch (IOException e) {
       System.out.println("Server: DOWN");
@@ -87,17 +93,6 @@ public class HTTPServer implements Runnable {
   }
 
   
-  String read_message(BufferedReader in) {
-    String s = "";
-    try {
-      for (int k = 0 ; k < 10 ; k++) {
-        s += in.readLine() + "\n";
-        System.out.println(in.readLine());
-      }
-    } catch (Exception e) {};
-    System.out.println("PRINTING s..\n"+s);
-    return s;
-  }
 
 
   /**
