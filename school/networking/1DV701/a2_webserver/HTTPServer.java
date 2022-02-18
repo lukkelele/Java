@@ -68,14 +68,15 @@ public class HTTPServer implements Runnable {
   public void run() {
 
     try {
-      BufferedReader in = getSocketInput();
-      BufferedOutputStream out = getSocketOutput();
+      BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+      BufferedOutputStream out = new BufferedOutputStream(connection.getOutputStream());
       PrintWriter output_terminal = new PrintWriter(connection.getOutputStream());          // true for enabling autoflush
 
       System.out.println("Server: RUNNING");
       System.out.println(in.readLine());
       output_terminal.println("Welcome!");
       while (true) {
+        output_terminal.println("Hello");
       }
       // GET shall only be handled
       
@@ -85,13 +86,6 @@ public class HTTPServer implements Runnable {
     }
   }
 
-
-  void displayInput(BufferedReader input) throws IOException {
-    String line = "";
-    while ((line = input.readLine()) != null) {
-      System.out.println(line);
-    }
-  }
 
 
   /**
@@ -134,8 +128,7 @@ public class HTTPServer implements Runnable {
 
 
   BufferedReader getSocketInput() throws IOException {
-    InputStreamReader input_stream = new InputStreamReader(connection.getInputStream());
-    return new BufferedReader(input_stream);
+    return new BufferedReader(new InputStreamReader(connection.getInputStream()));
   }
 
 
