@@ -1,9 +1,12 @@
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Scanner;
-import java.io.IOException;
-import java.io.BufferedReader;
-import java.io.BufferedOutputStream;
 
 public class HTTPServer implements Runnable {
 
@@ -45,11 +48,14 @@ public class HTTPServer implements Runnable {
     try {   
           System.out.println("Starting server on port "+port+"...");
           ServerSocket serverConnection = new ServerSocket(port);     // Create socket for the server connection
-          serverConnection.accept();                                  // Listen to chosen port and accept incoming connection
-          HTTPServer server = new HTTPServer(serverConnection);       // Create server with the socket that is listening for a connection
+          System.out.println("New server socket created.");
+          System.out.println("Server socket: LISTENING ON PORT "+port);
+          Socket serverSocket = serverConnection.accept();                                  // Listen to chosen port and accept incoming connection
+          System.out.println("Connection established!");
+          HTTPServer server = new HTTPServer(serverSocket);       // Create server with the socket that is listening for a connection
  
           Thread server_thread = new Thread(server);                  // Add the newly created HTTPServer object to a runnable thread
-          server_thread.start();       // thread.start() to create thread instead of running it directly, for multithread purposes
+          server_thread.start();       // thread.start() to run the server on a separate thread to be able to manage it
 
 
         } catch (Exception e) {
@@ -61,9 +67,36 @@ public class HTTPServer implements Runnable {
   
   public void run() {
 
+    try {
+      BufferedReader in = getSocketInput();
+      BufferedOutputStream out = getSocketOutput();
+      PrintWriter output_terminal = new PrintWriter(connection.getOutputStream());          // true for enabling autoflush
+
+      System.out.println("Server: RUNNING");
+      System.out.println(in.readLine());
+      output_terminal.println("Welcome!");
+      while (true) {
+      }
+      // GET shall only be handled
+      
+
+    } catch (IOException e) {
+      System.out.println("Server: DOWN");
+    }
   }
 
 
+  void displayInput(BufferedReader input) throws IOException {
+    String line = "";
+    while ((line = input.readLine()) != null) {
+      System.out.println(line);
+    }
+  }
+
+
+  /**
+   * Checks command line arguments if they are valid or not.
+   */
   public static boolean startup(String[] args) {
     System.out.println("!====================================!\nAttempting to start server..");
     if (checkPortArg(args[0]) == false) return false;
@@ -93,5 +126,17 @@ public class HTTPServer implements Runnable {
       return false;
     }
   }
+
+
+  BufferedOutputStream getSocketOutput() throws IOException {
+    return new BufferedOutputStream(connection.getOutputStream());
+  }
+
+
+  BufferedReader getSocketInput() throws IOException {
+    InputStreamReader input_stream = new InputStreamReader(connection.getInputStream());
+    return new BufferedReader(input_stream);
+  }
+
 
 }
