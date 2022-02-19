@@ -1,6 +1,7 @@
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -12,6 +13,8 @@ import java.util.Scanner;
 
 public class HTTPServer implements Runnable {
 
+  static final File root = new File(".");
+  static final String FILE_NOT_FOUND = "404.html";
   private static int port;
   private static String path = "";
   private Socket connection;
@@ -53,22 +56,22 @@ public class HTTPServer implements Runnable {
         case 1:
           // START SERVER
           // Runnable try/catch 
-    try {   
-        // This infinite loop creates new threads if multiple connections are queueing at the chosen port
-        System.out.println("Starting server on port "+port+"...");
-        ServerSocket serverConnection = new ServerSocket(port);     // Create socket for the server connection
-        while (true) {
-            System.out.println("Server socket: LISTENING ON PORT "+port);
-            HTTPServer server = new HTTPServer(serverConnection.accept());       // Create server with the socket that is listening for a connection
+          try {   
+              // This infinite loop creates new threads if multiple connections are queueing at the chosen port
+              System.out.println("Starting server on port "+port+"...");
+              ServerSocket serverConnection = new ServerSocket(port);     // Create socket for the server connection
+              while (true) {
+                  System.out.println("Server socket: LISTENING ON PORT "+port);
+                  HTTPServer server = new HTTPServer(serverConnection.accept());       // Create server with the socket that is listening for a connection
 
-            System.out.println("Assigning connection to a separate thread..");
-            Thread server_thread = new Thread(server);                  // Add the newly created HTTPServer object to a runnable thread
-            server_thread.start();       // thread.start() to run the server on a separate thread to be able to manage it
-          }    
+                  System.out.println("Assigning connection to a separate thread..");
+                  Thread server_thread = new Thread(server);                  // Add the newly created HTTPServer object to a runnable thread
+                  server_thread.start();       // thread.start() to run the server on a separate thread to be able to manage it
+                }    
 
-        } catch (Exception e) {
-            System.out.println("Error: RUNNABLE TRY/CATCH CLAUSE\n"+e);
-        }
+              } catch (Exception e) {
+                  System.out.println("Error: RUNNABLE TRY/CATCH CLAUSE\n"+e);
+          }
       }
   }
 
@@ -80,11 +83,14 @@ public class HTTPServer implements Runnable {
       BufferedOutputStream out = getSocketOutput();
       PrintWriter output_terminal = new PrintWriter(connection.getOutputStream());          // true for enabling autoflush
       System.out.println("Connection established!");
-      // Read request
       String s, method, version, version_no;
-      Dictionary dict = new Hashtable(); 
-      dict.put(1, "GET");
-
+      // Store request methods in a hashtable
+      Hashtable<Integer, String> dict = new Hashtable<Integer, String>(); 
+      dict.put(200, "OK");
+      dict.put(302, "FOUND");
+      dict.put(404, "NOT FOUND");
+      dict.put(500, "INTERNAL SERVER ERROR");
+      // Read request
       while ((s = in.readLine()) != null) {   // Read recieved data
         System.out.println(s);
       }
@@ -94,12 +100,6 @@ public class HTTPServer implements Runnable {
       version = head[1];
       version_no = head[2];
 
-      for (int k = 0 ; k < dict.size() ; k++) {
-        if (dict.get(k+1) == method) {
-          System.out.println("Verified type of method! ====> "+dict.get(k+1));
-        }
-      }
-
 
     } catch (IOException e) {
       System.out.println("Server: DOWN");
@@ -107,11 +107,34 @@ public class HTTPServer implements Runnable {
   }
 
 
+  void send_OK(PrintWriter out, File file) {
+    out.println("HTTP/1.1 200 OK");
+    out.println("Server: HTTPServer.java : 1.0");
+    out.println("Date: " + new Date());
+    out.println("Content-type: text/html");
+    out.println("Content-length: " + file.length());
+    out.println();
+  }
+
+  private byte[] read_file(File file) throws IOException {
+    FileInputStream inputstream = null;
+    byte[] data = new byte[file.length()];  // Create buffer to fit data
+
+    try {
+      inputstream = new FileInputStream(file);
+      inputstream.read(data);
+    } finally {
+        if (inputstream != null) inputstream.close();
+    }
+    return data;
+  }
+
   /**
    * Checks command line arguments if they are valid or not.
    */
   public static boolean startup(String[] args) {
-    System.out.println("!====================================!\n\nAttempting to start server..");
+    System.out.println("!====================================!\n\n"+
+        "Attempting to start server..");
     if (checkPortArg(args[0]) == false) return false;
     return true;
   }
