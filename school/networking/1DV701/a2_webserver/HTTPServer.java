@@ -114,45 +114,46 @@ public class HTTPServer implements Runnable {
       int len_file = (int) file.length();
       // Check if file is a directory, if true send all data recursively
      
-      if (file.isDirectory()) {
-        sendDirectoryFiles(out, output, file);
-      }
 
       if (method.equals("GET")) {
-        byte[] file_data = read_file(file);
 
-        output.println("HTTP/1.1 200 OK");
-        output.println("Server: HTTPServer.java : 1.0");
-        output.println("Date: " + new Date());
-        output.println("Content-type: "+checkType(file_request));
-        output.println("Content-length: " + len_file);
-        output.println();
-        output.flush();
-        
-        out.write(file_data, 0, len_file);
-        out.flush();
-
-        System.out.println("OUTGOING DATA: [FILE: "+file_request+", LENGTH: "+len_file+"]");
+        if (file.isDirectory()) {
+          for (File f : file.listFiles()) {
+            if (f.getName().contains("index.html")) {
+              file = f;
+              break;
+            }
+          }
+        }
+        send_data(out, output, file);
       }
-
     } catch (IOException e) {
         //send_FILE_NOT_FOUND(out, output);
-        System.out.println("Whoops!\n" + e);
-        
+        File error = new File(root, DEFAULT);
+        try {
+          // Change the status code message
+            send_data(out, output, error); 
+        } catch (IOException n) {
+            System.out.println("Whoops!\n" + e);
+                  
+      }
     }
   }
 
-
-  private File[] sendDirectoryFiles(BufferedOutputStream output_stream, PrintWriter output, File dir) throws IOException {
+  // Issues with the recursive use of same socket for multiple files being sent as multiple responses
+  private void sendDirectoryFiles(BufferedOutputStream output_stream, PrintWriter output, File dir) throws IOException {
     File[] files = dir.listFiles();
+    for (File fil : files) {
+      System.out.println(fil.getName()+" <==");
+    }
     for (File f : files) {
+      System.out.println("File: "+f.getName());
       if (f.isDirectory()) {
         sendDirectoryFiles(output_stream, output, f);
       } else {
         send_data(output_stream, output, f);
       }
     }
-    return dir.listFiles();
   }
 
 
@@ -170,7 +171,7 @@ public class HTTPServer implements Runnable {
         output_stream.write(file_data, 0, len_file);
         output_stream.flush();
 
-        System.out.println("OUTGOING DATA: [FILE: "+file.getName()+", LENGTH: "+len_file+"]");
+        System.out.println("OUTGOING DATA: [FILE: "+file.getPath()+", LENGTH: "+len_file+"]");
   }
 
 
