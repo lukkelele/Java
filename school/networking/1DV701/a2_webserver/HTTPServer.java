@@ -1,6 +1,7 @@
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -10,14 +11,17 @@ import java.net.Socket;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.Scanner;
+import java.util.Date;
+
 
 public class HTTPServer implements Runnable {
 
-  static final File root = new File(".");
+  private Socket connection;
+  static final String root = "./public/";
+  static final String DEFAULT = "index.html";
   static final String FILE_NOT_FOUND = "404.html";
   private static int port;
   private static String path = "";
-  private Socket connection;
 
 
   /**
@@ -35,9 +39,8 @@ public class HTTPServer implements Runnable {
       path = args[1];
       if (path.split("/").length > 1) {
         System.out.println("DIRECTORY ACCESS RESTRICTED!");
-        path = "public";
+        path = "./public";
       }
-      System.out.println(port+" | "+path);
       int c = boot(args);
       switch(c) {
 
@@ -64,7 +67,6 @@ public class HTTPServer implements Runnable {
                   System.out.println("Server socket: LISTENING ON PORT "+port);
                   HTTPServer server = new HTTPServer(serverConnection.accept());       // Create server with the socket that is listening for a connection
 
-                  System.out.println("Assigning connection to a separate thread..");
                   Thread server_thread = new Thread(server);                  // Add the newly created HTTPServer object to a runnable thread
                   server_thread.start();       // thread.start() to run the server on a separate thread to be able to manage it
                 }    
@@ -81,9 +83,9 @@ public class HTTPServer implements Runnable {
     try {
       BufferedReader in = getSocketInput();
       BufferedOutputStream out = getSocketOutput();
-      PrintWriter output_terminal = new PrintWriter(connection.getOutputStream());          // true for enabling autoflush
+      PrintWriter output = new PrintWriter(connection.getOutputStream());          // true for enabling autoflush
       System.out.println("Connection established!");
-      String s, method, version, version_no;
+      String s, method, file_request;
       // Store request methods in a hashtable
       Hashtable<Integer, String> dict = new Hashtable<Integer, String>(); 
       dict.put(200, "OK");
@@ -91,14 +93,32 @@ public class HTTPServer implements Runnable {
       dict.put(404, "NOT FOUND");
       dict.put(500, "INTERNAL SERVER ERROR");
       // Read request
-      while ((s = in.readLine()) != null) {   // Read recieved data
-        System.out.println(s);
+      s = in.readLine();
+      String[] header = s.split("/");
+      method = header[0].trim().toUpperCase();      // Trim to remove potential whitespaces. Could use method.matches instead as well
+      file_request = header[1].toLowerCase();
+
+      file_request = DEFAULT;
+      File file = new File(root, file_request);
+      int len_file = (int) file.length();
+      
+      if (method.equals("GET")) {
+        System.out.println("Reading file..");
+        byte[] file_data = read_file(file);
+
+        output.println("HTTP/1.1 200 OK");
+        output.println("Server: HTTPServer.java : 1.0");
+        output.println("Date: " + new Date());
+        output.println("Content-type: "+checkType(file_request));
+        output.println("Content-length: " + len_file);
+        output.println();
+        output.flush();
+        
+        out.write(file_data, 0, len_file);
+        out.flush();
+
+        System.out.println("OUTGOING DATA: [FILE: "+file_request+", LENGTH: "+len_file+"]");
       }
-      String[] header = s.split("\n");
-      String[] head = header[0].split("/");   // First line of the header [METHOD, VERSION, VERSION_NO]
-      method = head[0];
-      version = head[1];
-      version_no = head[2];
 
 
     } catch (IOException e) {
@@ -107,18 +127,17 @@ public class HTTPServer implements Runnable {
   }
 
 
-  void send_OK(PrintWriter out, File file) {
-    out.println("HTTP/1.1 200 OK");
-    out.println("Server: HTTPServer.java : 1.0");
-    out.println("Date: " + new Date());
-    out.println("Content-type: text/html");
-    out.println("Content-length: " + file.length());
-    out.println();
+  private String checkType(String request) {
+    if (request.endsWith(".html") || request.endsWith(".html")) {
+        return "text/html";
+    } else {
+        return "text/plain";
+    }
   }
 
   private byte[] read_file(File file) throws IOException {
     FileInputStream inputstream = null;
-    byte[] data = new byte[file.length()];  // Create buffer to fit data
+    byte[] data = new byte[(int)file.length()];  // Create buffer to fit data
 
     try {
       inputstream = new FileInputStream(file);
