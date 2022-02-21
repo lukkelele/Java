@@ -141,6 +141,7 @@ public class HTTPServer implements Runnable {
   }
 
   // Issues with the recursive use of same socket for multiple files being sent as multiple responses
+  // Instead!! Pack all files into message body
   private void sendDirectoryFiles(BufferedOutputStream output_stream, PrintWriter output, File dir) throws IOException {
     File[] files = dir.listFiles();
     for (File fil : files) {
