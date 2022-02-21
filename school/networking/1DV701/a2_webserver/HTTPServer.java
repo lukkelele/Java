@@ -90,7 +90,7 @@ public class HTTPServer implements Runnable {
       out = getSocketOutput();
       output = new PrintWriter(connection.getOutputStream());          // true for enabling autoflush
 
-      System.out.println("Connection established!");
+      //System.out.println("Connection established!");
       String s, method, file_request;
       // Store request methods in a hashtable
       Hashtable<Integer, String> dict = new Hashtable<Integer, String>(); 
@@ -99,21 +99,25 @@ public class HTTPServer implements Runnable {
       dict.put(404, "NOT FOUND");
       dict.put(500, "INTERNAL SERVER ERROR");
       // Read request
-      s = in.readLine();
-      String[] header = s.split("/");
-      method = header[0].trim().toUpperCase();      // Trim to remove potential whitespaces. Could use method.matches instead as well
+      s = in.readLine();                           // Read first line to get mandatory info
+      String[] header = s.split("/");              // Split header in to three pieces
+      method = header[0].trim().toUpperCase();     // Trim to remove potential whitespaces. Could use method.matches instead as well
       file_request = header[1].toLowerCase();
-      System.out.println("FILE REQUESTED ==> " + file_request);
-      if (file_request.trim().equals("http")) {    // If file request is "empty"
+      if (file_request.trim().equals("http")) {    // If file request is "empty", for initial responses etc.
         System.out.println("File request empty.. setting default");
         file_request = DEFAULT;
       } else {
-        file_request = file_request.split(" ")[0];
+        file_request = file_request.split(" ")[0]; // If file request isn't empty, remove the "http" part 
       }
 
       File file = new File(root, file_request);
       int len_file = (int) file.length();
-      
+      // Check if file is a directory, if true send all data recursively
+     
+      if (file.isDirectory()) {
+        sendDirectoryFiles(out, output, file);
+      }
+
       if (method.equals("GET")) {
         byte[] file_data = read_file(file);
 
@@ -133,17 +137,42 @@ public class HTTPServer implements Runnable {
 
     } catch (IOException e) {
         //send_FILE_NOT_FOUND(out, output);
+        System.out.println("Whoops!\n" + e);
+        
     }
   }
 
 
-  private String checkType(String request) {
-    if (request.endsWith(".html") || request.endsWith(".html")) {
-        return "text/html";
-    } else {
-        return "text/plain";
+  private File[] sendDirectoryFiles(BufferedOutputStream output_stream, PrintWriter output, File dir) throws IOException {
+    File[] files = dir.listFiles();
+    for (File f : files) {
+      if (f.isDirectory()) {
+        sendDirectoryFiles(output_stream, output, f);
+      } else {
+        send_data(output_stream, output, f);
+      }
     }
+    return dir.listFiles();
   }
+
+
+  private void send_data(BufferedOutputStream output_stream, PrintWriter output, File file) throws IOException { 
+        byte[] file_data = read_file(file);
+        int len_file = (int) file.length();
+        output.println("HTTP/1.1 200 OK");
+        output.println("Server: HTTPServer.java : 1.0");
+        output.println("Date: " + new Date());
+        output.println("Content-type: "+checkType(file.getName()));
+        output.println("Content-length: " + len_file);
+        output.println();
+        output.flush();
+        
+        output_stream.write(file_data, 0, len_file);
+        output_stream.flush();
+
+        System.out.println("OUTGOING DATA: [FILE: "+file.getName()+", LENGTH: "+len_file+"]");
+  }
+
 
 
   private byte[] read_file(File file) throws IOException {
@@ -163,15 +192,6 @@ public class HTTPServer implements Runnable {
     return data;
   }
 
-  /**
-   * Checks command line arguments if they are valid or not.
-   */
-  public static boolean startup(String[] args) {
-    System.out.println("!====================================!\n\n"+
-        "Attempting to start server..");
-    if (checkPortArg(args[0]) == false) return false;
-    return true;
-  }
 
 
   private void send_FILE_NOT_FOUND(BufferedOutputStream output_stream, PrintWriter out) throws IOException {
@@ -190,7 +210,6 @@ public class HTTPServer implements Runnable {
     output_stream.write(data, 0, len_file);
     output_stream.flush();
   }
-
 
 
   static int boot(String[] args) {
@@ -216,6 +235,26 @@ public class HTTPServer implements Runnable {
     }
   }
 
+
+  private String checkType(String request) {
+    if (request.endsWith(".html") || request.endsWith(".html")) {
+        return "text/html";
+    } else if (request.endsWith(".jpg")) {
+        return "image/jpeg";  
+    } else if (request.endsWith(".png")) {
+        return "image/png";
+    } else {
+        return "text/plain";
+    }
+  }
+
+
+  public static boolean startup(String[] args) {
+    System.out.println("!====================================!\n\n"+
+        "Attempting to start server..");
+    if (checkPortArg(args[0]) == false) return false;
+    return true;
+  }
 
   BufferedOutputStream getSocketOutput() throws IOException {
     return new BufferedOutputStream(connection.getOutputStream());
