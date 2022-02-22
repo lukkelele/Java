@@ -103,14 +103,13 @@ public class HTTPServer implements Runnable {
       } else {
         file_request = file_request.split(" ")[0]; // If file request isn't empty, remove the "http" part 
       }
-
+      File def_file = new File(root, DEFAULT);
       try {
           file = new File(root, file_request);
           int len_file = (int) file.length();
       } catch (Exception e) {
           System.out.println("FILE NOT FOUND!");
           // Check if there is a redirect path available
-          file = validate_file(out, output, file_request);  // If a redirect URL exist, choose that, else return default
       }
       
       // For GET methods
@@ -135,33 +134,24 @@ public class HTTPServer implements Runnable {
     }
   }
 
-  private File validate_file(BufferedOutputStream output_stream, PrintWriter output, String file_request) throws IOException { 
-    Hashtable<String, String> dict = new Hashtable<String, String>();
-    File file;
-    dict.put("/a/b/redirect.html", "redirect.html");    // KEY = FILE REQUEST  | VALUE = REDIRECT PATH
-    if (dict.get(file_request.toLowerCase()) != null) { // if there is a redirect path, choose that one
-        file = new File(root, dict.get(file_request));
-    } else { 
-        file = new File(root, DEFAULT);
-    }
-    return file;
-  }
+  
+
 
   private void send_data(BufferedOutputStream output_stream, PrintWriter output, File file) throws IOException { 
-        byte[] file_data = read_file(file);
-        int len_file = (int) file.length();
-        output.println("HTTP/1.1 200 OK");
-        output.println("Server: HTTPServer.java : 1.0");
-        output.println("Date: " + new Date());
-        output.println("Content-type: "+checkType(file.getName()));
-        output.println("Content-length: " + len_file);
-        output.println();
-        output.flush();
-        
-        output_stream.write(file_data, 0, len_file);
-        output_stream.flush();
+    byte[] file_data = read_file(file);
+    int len_file = (int) file.length();
+    output.println("HTTP/1.1 200 OK");
+    output.println("Server: HTTPServer.java : 1.0");
+    output.println("Date: " + new Date());
+    output.println("Content-type: "+checkType(file.getName()));
+    output.println("Content-length: " + len_file);
+    output.println();
+    output.flush();
+    
+    output_stream.write(file_data, 0, len_file);
+    output_stream.flush();
 
-        System.out.println("OUTGOING DATA: [FILE: "+file.getPath()+", LENGTH: "+len_file+" , REQUESTED FILE ===> "+file.getPath()+"]");
+    System.out.println("OUTGOING DATA: [FILE: "+file.getPath()+", LENGTH: "+len_file+" , REQUESTED FILE ===> "+file.getPath()+"]");
   }
 
 
@@ -180,23 +170,42 @@ public class HTTPServer implements Runnable {
   }
 
 
+  private File validate_file(BufferedOutputStream output_stream, PrintWriter output, String file_request) throws IOException { 
+    Hashtable<String, String> dict = new Hashtable<String, String>();
+    File file;
+    dict.put("/a/b/redirect.html", "redirect.html");    // KEY = FILE REQUEST  | VALUE = REDIRECT PATH
+    System.out.println("======== dict.get(file_request.toLowerCase()) = " + dict.get(file_request.toLowerCase()));
+    if (dict.get(file_request.toLowerCase()) != null) { // if there is a redirect path, choose that one
+        System.out.println("Getting dict.get(file_request)");
+        return file = new File(root, dict.get(file_request));
+    } else { 
+        System.out.println("NOT!! Getting dict.get(file_request)");
+        return file = new File(root, FILE_NOT_FOUND);
+    }
+  }
+
 
   private void send_FILE_NOT_FOUND(BufferedOutputStream output_stream, PrintWriter out, String requested_file) throws IOException {
-    File file = new File(root, FILE_NOT_FOUND);
-    int len_file = (int) file.length();   // cast to int since file.length is long;
+    File file;
     System.out.println("FILE NOT FOUND | SENDING ERROR MESSAGE!");
-    
-    
-    out.println("HTTP/1.1 404 File Not Found");
-    out.println("Server: cowabunga : 1.0");
-    out.println("Date: " + new Date());
-    out.println("Content-type: " + checkType(requested_file));
-    out.println("Content-length: " + len_file);
-    out.println();
-    out.flush();
-
-    //output_stream.write(data, 0, len_file);
-    //output_stream.flush();
+    file = validate_file(output_stream, out, requested_file);  // If a redirect URL exist, choose that, else return default
+    if (!file.getName().equals("404.html")) {
+      System.out.println("file not found --> sending redirect");
+      send_data(output_stream, out, file);
+    } else {
+      System.out.println("Sending normal file not found");
+      int len_file = (int) file.length();   // cast to int since file.length is long;
+      
+      out.println("HTTP/1.1 404 File Not Found");
+      out.println("Server: cowabunga : 1.0");
+      out.println("Date: " + new Date());
+      out.println("Content-type: " + checkType(requested_file));
+      out.println("Content-length: " + len_file);
+      out.println();
+      out.flush();
+      //output_stream.write(data, 0, len_file);
+      //output_stream.flush();
+    }
   }
 
 
