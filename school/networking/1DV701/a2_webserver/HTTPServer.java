@@ -18,10 +18,10 @@ import java.util.Date;
 public class HTTPServer implements Runnable {
 
   private Socket connection;
+  private static int port;
   static final String root = "./public/";
   static final String DEFAULT = "index.html";
   static final String FILE_NOT_FOUND = "404.html";
-  private static int port;
   private static String path = "";
 
 
@@ -38,10 +38,15 @@ public class HTTPServer implements Runnable {
   public static void main(String[] args) {
       Scanner user = new Scanner(System.in);
       path = args[1];
-      if (path.split("/").length > 1) {
+      System.out.println("ENTERED PATH ==> " + path);
+      if (path.startsWith("..")) {
         System.out.println("DIRECTORY ACCESS RESTRICTED!\nPATH SET TO DEFAULT.");
-        path = "./public/";
+        path = "public";
       }
+      if (path.endsWith("/")) path = path.replace("/", "");
+      if (path.startsWith("./")) path = path.replace("./", "");
+      path = "./" + path + "/";
+      System.out.println("MODIFIED PATH ==> " + path);
       int c = boot(args);
       switch(c) {
 
