@@ -84,33 +84,29 @@ public class HTTPServer implements Runnable {
     BufferedReader in = null; 
     BufferedOutputStream out = null;
     PrintWriter output = null;
+    File file = null;
+    String file_request = null;
 
     try {
       in = getSocketInput();
       out = getSocketOutput();
       output = new PrintWriter(connection.getOutputStream());          // true for enabling autoflush
-      File file = null;
-      //System.out.println("Connection established!");
-      String s, method, file_request;
-      // Store request methods in a hashtable
-      Hashtable<Integer, String> dict = new Hashtable<Integer, String>(); 
-      dict.put(200, "OK");
-      dict.put(302, "FOUND");
-      dict.put(404, "NOT FOUND");
-      dict.put(500, "INTERNAL SERVER ERROR");
+      String s, method;
+
       // Read request
       s = in.readLine();                           // Read first line to get mandatory info
       System.out.println("HEADER | " + s);
       String[] header = s.split(" ");              // Split header in to three pieces
       method = header[0].trim().toUpperCase();     // Trim to remove potential whitespaces. Could use method.matches instead as well
       file_request = header[1].toLowerCase();
-      System.out.println("request ==> " + file_request);
+
       if (file_request.trim().equals("http")) {    // If file request is "empty", for initial responses etc.
         System.out.println("File request empty.. setting default");
         file_request = DEFAULT;
       } else {
         file_request = file_request.split(" ")[0]; // If file request isn't empty, remove the "http" part 
       }
+
       System.out.println("CREATING FILE >>>");
       try {
           file = new File(root, file_request);
@@ -134,8 +130,7 @@ public class HTTPServer implements Runnable {
     } catch (IOException e) {
       System.out.println("IOException raised! || "+e);
       try {
-        File default_file = new File(root, DEFAULT);    
-        send_data(out, output, default_file); 
+        send_FILE_NOT_FOUND(out, output, file_request);
       } catch (IOException n) {
             System.out.println("Whoops!\n" + e);
       }
@@ -181,21 +176,22 @@ public class HTTPServer implements Runnable {
 
 
 
-  private void send_FILE_NOT_FOUND(BufferedOutputStream output_stream, PrintWriter out) throws IOException {
+  private void send_FILE_NOT_FOUND(BufferedOutputStream output_stream, PrintWriter out, String requested_file) throws IOException {
     File file = new File(root, FILE_NOT_FOUND);
-    int len_file = (int) file.length();   // cast to int since file.length is long
-    byte[] data = read_file(file);
-
+    int len_file = (int) file.length();   // cast to int since file.length is long;
+    System.out.println("FILE NOT FOUND | SENDING ERROR MESSAGE!");
+    
+    
     out.println("HTTP/1.1 404 File Not Found");
     out.println("Server: cowabunga : 1.0");
     out.println("Date: " + new Date());
-    out.println("Content-type: text/html");
+    out.println("Content-type: " + checkType(requested_file));
     out.println("Content-length: " + len_file);
     out.println();
     out.flush();
 
-    output_stream.write(data, 0, len_file);
-    output_stream.flush();
+    //output_stream.write(data, 0, len_file);
+    //output_stream.flush();
   }
 
 
