@@ -89,7 +89,7 @@ public class HTTPServer implements Runnable {
       in = getSocketInput();
       out = getSocketOutput();
       output = new PrintWriter(connection.getOutputStream());          // true for enabling autoflush
-
+      File file = null;
       //System.out.println("Connection established!");
       String s, method, file_request;
       // Store request methods in a hashtable
@@ -100,59 +100,44 @@ public class HTTPServer implements Runnable {
       dict.put(500, "INTERNAL SERVER ERROR");
       // Read request
       s = in.readLine();                           // Read first line to get mandatory info
-      String[] header = s.split("/");              // Split header in to three pieces
+      System.out.println("HEADER | " + s);
+      String[] header = s.split(" ");              // Split header in to three pieces
       method = header[0].trim().toUpperCase();     // Trim to remove potential whitespaces. Could use method.matches instead as well
       file_request = header[1].toLowerCase();
+      System.out.println("request ==> " + file_request);
       if (file_request.trim().equals("http")) {    // If file request is "empty", for initial responses etc.
         System.out.println("File request empty.. setting default");
         file_request = DEFAULT;
       } else {
         file_request = file_request.split(" ")[0]; // If file request isn't empty, remove the "http" part 
       }
-
-      File file = new File(root, file_request);
-      int len_file = (int) file.length();
-      // Check if file is a directory, if true send all data recursively
-     
+      System.out.println("CREATING FILE >>>");
+      try {
+          file = new File(root, file_request);
+          int len_file = (int) file.length();
+      } catch (Exception e) {
+          System.out.println("FILE NOT FOUND! CREATING DEFAULT FILE TO REPLACE THE REQUEST! ; "+e);
+          file = new File(root, DEFAULT);
+      }
 
       if (method.equals("GET")) {
-
-        if (file.isDirectory()) {
+       if (file.isDirectory()) {
           for (File f : file.listFiles()) {
             if (f.getName().contains("index.html")) {
-              file = f;
-              break;
+              send_data(out, output, f);
             }
           }
-        }
+        } else {
         send_data(out, output, file);
+        }
       }
     } catch (IOException e) {
-        //send_FILE_NOT_FOUND(out, output);
-        File error = new File(root, DEFAULT);
-        try {
-          // Change the status code message
-            send_data(out, output, error); 
-        } catch (IOException n) {
+      System.out.println("IOException raised! || "+e);
+      try {
+        File default_file = new File(root, DEFAULT);    
+        send_data(out, output, default_file); 
+      } catch (IOException n) {
             System.out.println("Whoops!\n" + e);
-                  
-      }
-    }
-  }
-
-  // Issues with the recursive use of same socket for multiple files being sent as multiple responses
-  // Instead!! Pack all files into message body
-  private void sendDirectoryFiles(BufferedOutputStream output_stream, PrintWriter output, File dir) throws IOException {
-    File[] files = dir.listFiles();
-    for (File fil : files) {
-      System.out.println(fil.getName()+" <==");
-    }
-    for (File f : files) {
-      System.out.println("File: "+f.getName());
-      if (f.isDirectory()) {
-        sendDirectoryFiles(output_stream, output, f);
-      } else {
-        send_data(output_stream, output, f);
       }
     }
   }
@@ -172,13 +157,13 @@ public class HTTPServer implements Runnable {
         output_stream.write(file_data, 0, len_file);
         output_stream.flush();
 
-        System.out.println("OUTGOING DATA: [FILE: "+file.getPath()+", LENGTH: "+len_file+"]");
+        System.out.println("OUTGOING DATA: [FILE: "+file.getPath()+", LENGTH: "+len_file+" , REQUESTED FILE ===> "+file.getPath()+"]");
   }
 
 
 
   private byte[] read_file(File file) throws IOException {
-    FileInputStream inputstream = null;
+    FileInputStream inputstream = null;          // needed for finally clause
     byte[] data = new byte[(int)file.length()];  // Create buffer to fit data
     String file_name = file.getName();
     try {
