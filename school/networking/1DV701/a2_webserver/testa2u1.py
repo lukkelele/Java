@@ -18,13 +18,16 @@ fe = '.html'
 def killWS(s):
     return re.sub(r'\s', '', s)
 
+
 def loadPage(fn):
     s = open(dirbase / fn).read()
     return killWS(s)
 
+
 def loadImage(fn):
     s = open(dirbase / fn, 'rb').read()
     return s
+
 
 def requestPageOK(p, pn):
     # Assumes 'index.html' should be added if p is not a file
@@ -51,6 +54,7 @@ def requestPageOK(p, pn):
     print(f'OK: {pn}')
     return True
 
+
 def requestPageNotOK(p, pn, code):
     r = requests.get(f'http://{server}:{port}/{p}')
 
@@ -64,6 +68,7 @@ def requestPageNotOK(p, pn, code):
 
     print(f'OK: {pn}')
     return True
+
 
 def requestImage(p, pn):
     r = requests.get(f'http://{server}:{port}/{p}')
@@ -138,3 +143,7 @@ requestPageNotOK(f'nosuchpage{fe}', 'Page fail', 404)
 requestPageNotOK(f'a/fail{fe}', 'Page in dir fail', 404)
 requestPageNotOK('a/b/c/d', 'Dir no index fail', 404)
 requestPageNotOK('a/b/c/noimage.png', 'Image fail', 404)
+
+# IMPLEMENTED BY ME (lg222xf)
+
+requestPageOK(f'a/b/REDIRECT{fe}', 'Redirected page for error code 302')

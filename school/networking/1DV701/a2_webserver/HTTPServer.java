@@ -13,7 +13,6 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.Scanner;
 import java.util.Date;
-import javax.imageio.ImageIO;
 
 
 public class HTTPServer implements Runnable {
@@ -40,14 +39,13 @@ public class HTTPServer implements Runnable {
       Scanner user = new Scanner(System.in);
       path = args[1];
       if (path.split("/").length > 1) {
-        System.out.println("DIRECTORY ACCESS RESTRICTED!");
+        System.out.println("DIRECTORY ACCESS RESTRICTED!\nPATH SET TO DEFAULT.");
         path = "./public/";
       }
       int c = boot(args);
       switch(c) {
 
         case 0:
-          // FIX FAULTY ARGUMENTS
           String input = "";
           boolean arg_flag = false;
           while (arg_flag == false) {
@@ -60,18 +58,17 @@ public class HTTPServer implements Runnable {
           user.close();
         case 1:
           // START SERVER
-          // Runnable try/catch 
+          ServerSocket serverConnection = null;
           try {   
               // This infinite loop creates new threads if multiple connections are queueing at the chosen port
               System.out.println("Starting server on port "+port+"...");
-              ServerSocket serverConnection = new ServerSocket(port);     // Create socket for the server connection
+              serverConnection = new ServerSocket(port);     // Create socket for the server connection
               System.out.println("Server socket: LISTENING ON PORT "+port);
               while (true) {
                   HTTPServer server = new HTTPServer(serverConnection.accept());       // Create server with the socket that is listening for a connection
                   Thread server_thread = new Thread(server);                  // Add the newly created HTTPServer object to a runnable thread
                   server_thread.start();       // thread.start() to run the server on a separate thread to be able to manage it
                 }    
-
               } catch (Exception e) {
                   System.out.println("Error: RUNNABLE TRY/CATCH CLAUSE\n"+e);
           }
@@ -95,11 +92,11 @@ public class HTTPServer implements Runnable {
 
       // Read request
       s = in.readLine();                           // Read first line to get mandatory info
-      System.out.println("HEADER | " + s);
       String[] header = s.split(" ");              // Split header in to three pieces
       method = header[0].trim().toUpperCase();     // Trim to remove potential whitespaces. Could use method.matches instead as well
       file_request = header[1].toLowerCase();
 
+      // Find out the name of the file to respond with
       if (file_request.trim().equals("http")) {    // If file request is "empty", for initial responses etc.
         System.out.println("File request empty.. setting default");
         file_request = DEFAULT;
@@ -107,15 +104,16 @@ public class HTTPServer implements Runnable {
         file_request = file_request.split(" ")[0]; // If file request isn't empty, remove the "http" part 
       }
 
-      System.out.println("CREATING FILE >>>");
       try {
           file = new File(root, file_request);
           int len_file = (int) file.length();
       } catch (Exception e) {
-          System.out.println("FILE NOT FOUND! CREATING DEFAULT FILE TO REPLACE THE REQUEST! ; "+e);
-          file = new File(root, DEFAULT);
+          System.out.println("FILE NOT FOUND!");
+          // Check if there is a redirect path available
+          file = validate_file(out, output, file_request);  // If a redirect URL exist, choose that, else return default
       }
-
+      
+      // For GET methods
       if (method.equals("GET")) {
        if (file.isDirectory()) {
           for (File f : file.listFiles()) {
@@ -137,6 +135,17 @@ public class HTTPServer implements Runnable {
     }
   }
 
+  private File validate_file(BufferedOutputStream output_stream, PrintWriter output, String file_request) throws IOException { 
+    Hashtable<String, String> dict = new Hashtable<String, String>();
+    File file;
+    dict.put("/a/b/redirect.html", "redirect.html");    // KEY = FILE REQUEST  | VALUE = REDIRECT PATH
+    if (dict.get(file_request.toLowerCase()) != null) { // if there is a redirect path, choose that one
+        file = new File(root, dict.get(file_request));
+    } else { 
+        file = new File(root, DEFAULT);
+    }
+    return file;
+  }
 
   private void send_data(BufferedOutputStream output_stream, PrintWriter output, File file) throws IOException { 
         byte[] file_data = read_file(file);
@@ -162,12 +171,8 @@ public class HTTPServer implements Runnable {
     byte[] data = new byte[(int)file.length()];  // Create buffer to fit data
     String file_name = file.getName();
     try {
-      if (file_name.endsWith(".png") || file_name.endsWith(".jpg")) {
-      
-      } else {
       inputstream = new FileInputStream(file);
       inputstream.read(data);
-      }
     } finally {
         if (inputstream != null) inputstream.close();
     }
@@ -195,7 +200,7 @@ public class HTTPServer implements Runnable {
   }
 
 
-  static int boot(String[] args) {
+  private static int boot(String[] args) {
     int c = 0;
     boolean start = startup(args);
     if (start == true) {
@@ -206,7 +211,7 @@ public class HTTPServer implements Runnable {
   }
 
 
-  static boolean checkPortArg(String arg) {
+  private static boolean checkPortArg(String arg) {
     System.out.println("Checking validity of port argument..");
     try {
       Integer.parseInt(arg);
