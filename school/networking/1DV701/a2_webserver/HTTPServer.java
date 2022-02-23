@@ -78,25 +78,18 @@ public class HTTPServer implements Runnable {
       String[] header = s.split(" ");              // Split header in to three pieces
       method = header[0].trim().toUpperCase();     // Trim to remove potential whitespaces. Could use method.matches instead as well
       file_request = header[1].toLowerCase();
-      System.out.println("==> FILE REQUEST ==> "+file_request);
       // Find out the name of the file to respond with
       if (file_request.trim().equals("http")) {    // If file request is "empty", for initial responses etc.
         System.out.println("File request empty.. setting default");
         file_request = DEFAULT;
-      } else if (file_request.equals("redirect.html")) {
-          System.out.println("Sending FOUND error!");
-          send_FOUND_ERROR(out, output);
       } else {
         file_request = file_request.split(" ")[0]; // If file request isn't empty, remove the "http" part 
       }
-      try {
-          file = new File(root, file_request);
-          int len_file = (int) file.length();
-      } catch (Exception e) {
-          System.out.println("FILE NOT FOUND!");
-          // Check if there is a redirect path available
-      }
-      
+
+      file = new File(root, file_request);
+      int len_file = (int) file.length();
+     
+
       // For GET methods
       if (method.equals("GET")) {
        if (file.isDirectory()) {
@@ -111,18 +104,12 @@ public class HTTPServer implements Runnable {
       }
     } catch (IOException e) {
       System.out.println("IOException raised! || file_request = " + file_request + " || "+e);
-      if (file_request.equals("/redirect.html")) {
-        try {
-          send_FOUND_ERROR(out, output);
-        } catch (IOException n) {
-              System.out.println("Whoops!\n" + e);
-        }
-      } else {
-        try {
-          send_FILE_NOT_FOUND(out, output, file_request);
-        } catch (IOException n) {
-              System.out.println("Whoops!\n" + e);
-        }
+      File FOUND = new File(root, redirect_url);
+      System.out.println("File =======> " + file.getName() + "\nFOUND ======> " + FOUND.getName());
+      try {
+        send_FILE_NOT_FOUND(out, output, file_request);
+      } catch (IOException n) {
+            System.out.println("Whoops!\n" + e);
       }
     }
   }
@@ -142,7 +129,7 @@ public class HTTPServer implements Runnable {
     output_stream.write(file_data, 0, len_file);
     output_stream.flush();
 
-    System.out.println("OUTGOING DATA: [FILE: "+file.getPath()+", LENGTH: "+len_file+" , REQUESTED FILE ===> "+file.getPath()+"]");
+    System.out.println("OUTGOING DATA: [FILE: "+file.getPath()+" | LENGTH: "+len_file+" | REQUESTED FILE ===> "+file.getPath()+"]");
   }
 
 
@@ -171,33 +158,28 @@ public class HTTPServer implements Runnable {
     output.println();
     output.flush();
     
-    System.out.println("OUTGOING DATA: [FILE: "+file.getPath()+", LENGTH: "+len_file+" , REQUESTED FILE ===> "+file.getPath()+"]");
+    System.out.println("OUTGOING DATA: [FILE: "+file.getPath()+" | LENGTH: "+len_file+" | REQUESTED FILE ===> "+file.getPath()+"]");
   }
 
 
   private void send_FILE_NOT_FOUND(BufferedOutputStream output_stream, PrintWriter out, String requested_file) throws IOException {
-    System.out.println("=-=-=-=-=-=-=-=- Entered FILE NOT FOUND ==> "+requested_file);
     File file;
-    try {
-      if (requested_file.equals("/redirect.html")) {
-         System.out.println("FILE REQUESTED IS FOUND AT ANOTHER LOCATION!");
-         send_FOUND_ERROR(output_stream, out);
-      } else {
-        file = new File(root, FILE_NOT_FOUND);
-        System.out.println("FILE NOT FOUND | SENDING ERROR MESSAGE!");
-        int len_file = (int) file.length();   // cast to int since file.length is long;
-        out.println("HTTP/1.1 404 File Not Found");
-        out.println("Server: cowabunga : 1.0");
-        out.println("Date: " + new Date());
-        out.println("Content-type: " + checkType(requested_file));
-        out.println("Content-length: " + len_file);
-        out.println();
-        out.flush();
+    if (requested_file.equals(redirect_url)) {
+       System.out.println("FILE REQUESTED IS FOUND AT ANOTHER LOCATION!");
+       send_FOUND_ERROR(output_stream, out);
+    } else {
+      file = new File(root, FILE_NOT_FOUND);
+      System.out.println("FILE NOT FOUND | SENDING ERROR MESSAGE!");
+      int len_file = (int) file.length();   // cast to int since file.length is long;
 
-        System.out.println("OUTGOING DATA: [FILE: "+file.getPath()+", LENGTH: "+len_file+" , REQUESTED FILE ===> "+file.getPath()+"]");
-      }
-    } finally {
-      System.out.println("Done");
+      out.println("HTTP/1.1 404 File Not Found");
+      out.println("Server: cowabunga : 1.0");
+      out.println("Date: " + new Date());
+      out.println("Content-type: " + checkType(requested_file));
+      out.println("Content-length: " + len_file);
+      out.println();
+      out.flush();
+      System.out.println("OUTGOING DATA: [FILE: "+file.getPath()+" | LENGTH: "+len_file+" | REQUESTED FILE ===> "+file.getPath()+"]");
     }
   }
 
