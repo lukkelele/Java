@@ -15,6 +15,7 @@ import java.util.Scanner;
 import java.util.Date;
 
 
+
 public class HTTPServer implements Runnable {
 
   private Socket connection;
@@ -25,11 +26,6 @@ public class HTTPServer implements Runnable {
   private static String path = "";
 
 
-  /**
-   * Constructor
-   *
-   * @param s is the socketto connect to
-   */
   public HTTPServer(Socket s) {
     connection = s;                   
   }
@@ -38,7 +34,9 @@ public class HTTPServer implements Runnable {
   public static void main(String[] args) {
       Scanner user = new Scanner(System.in);
       path = args[1];
+      boolean arg_flag2 = checkPathArg(path);
       System.out.println("ENTERED PATH ==> " + path);
+      // Path argument validation
       if (path.startsWith("..")) {
         System.out.println("DIRECTORY ACCESS RESTRICTED!\nPATH SET TO DEFAULT.");
         path = "public";
@@ -46,17 +44,19 @@ public class HTTPServer implements Runnable {
       if (path.endsWith("/")) path = path.replace("/", "");
       if (path.startsWith("./")) path = path.replace("./", "");
       path = "./" + path + "/";
+
       System.out.println("MODIFIED PATH ==> " + path);
+      
       int c = boot(args);
       switch(c) {
 
         case 0:
           String input = "";
-          boolean arg_flag = false;
-          while (arg_flag == false) {
+          boolean arg_flag1 = false;
+          while (arg_flag1 == false) {
             try {
             input = user.nextLine();
-            arg_flag = checkPortArg(input);
+            arg_flag1 = checkPortArg(input);
             } catch (Exception e) {}
           } 
           port = Integer.parseInt(input);
@@ -139,8 +139,6 @@ public class HTTPServer implements Runnable {
     }
   }
 
-  
-
 
   private void send_data(BufferedOutputStream output_stream, PrintWriter output, File file) throws IOException { 
     byte[] file_data = read_file(file);
@@ -160,11 +158,9 @@ public class HTTPServer implements Runnable {
   }
 
 
-
   private byte[] read_file(File file) throws IOException {
     FileInputStream inputstream = null;          // needed for finally clause
     byte[] data = new byte[(int)file.length()];  // Create buffer to fit data
-    String file_name = file.getName();
     try {
       inputstream = new FileInputStream(file);
       inputstream.read(data);
@@ -175,41 +171,32 @@ public class HTTPServer implements Runnable {
   }
 
 
-  private File validate_file(BufferedOutputStream output_stream, PrintWriter output, String file_request) throws IOException { 
-    Hashtable<String, String> dict = new Hashtable<String, String>();
-    File file;
-    dict.put("/a/b/redirect.html", "redirect.html");    // KEY = FILE REQUEST  | VALUE = REDIRECT PATH
-    System.out.println("======== dict.get(file_request.toLowerCase()) = " + dict.get(file_request.toLowerCase()));
-    if (dict.get(file_request.toLowerCase()) != null) { // if there is a redirect path, choose that one
-        System.out.println("Getting dict.get(file_request)");
-        return file = new File(root, dict.get(file_request));
-    } else { 
-        System.out.println("NOT!! Getting dict.get(file_request)");
-        return file = new File(root, FILE_NOT_FOUND);
-    }
+  private void send_FILE_NOT_FOUND(BufferedOutputStream output_stream, PrintWriter out, String requested_file) throws IOException {
+    File file = new File(root, FILE_NOT_FOUND);
+    System.out.println("FILE NOT FOUND | SENDING ERROR MESSAGE!");
+    int len_file = (int) file.length();   // cast to int since file.length is long;
+      
+    out.println("HTTP/1.1 404 File Not Found");
+    out.println("Server: cowabunga : 1.0");
+    out.println("Date: " + new Date());
+    out.println("Content-type: " + checkType(requested_file));
+    out.println("Content-length: " + len_file);
+    out.println();
+    out.flush();
+    //output_stream.write(data, 0, len_file);
+    //output_stream.flush();
   }
 
 
-  private void send_FILE_NOT_FOUND(BufferedOutputStream output_stream, PrintWriter out, String requested_file) throws IOException {
-    File file;
-    System.out.println("FILE NOT FOUND | SENDING ERROR MESSAGE!");
-    file = validate_file(output_stream, out, requested_file);  // If a redirect URL exist, choose that, else return default
-    if (!file.getName().equals("404.html")) {
-      System.out.println("file not found --> sending redirect");
-      send_data(output_stream, out, file);
+  private String checkType(String request) {
+    if (request.endsWith(".html") || request.endsWith(".html")) {
+        return "text/html";
+    } else if (request.endsWith(".jpg")) {
+        return "image/jpeg";  
+    } else if (request.endsWith(".png")) {
+        return "image/png";
     } else {
-      System.out.println("Sending normal file not found");
-      int len_file = (int) file.length();   // cast to int since file.length is long;
-      
-      out.println("HTTP/1.1 404 File Not Found");
-      out.println("Server: cowabunga : 1.0");
-      out.println("Date: " + new Date());
-      out.println("Content-type: " + checkType(requested_file));
-      out.println("Content-length: " + len_file);
-      out.println();
-      out.flush();
-      //output_stream.write(data, 0, len_file);
-      //output_stream.flush();
+        return "text/plain";
     }
   }
 
@@ -229,32 +216,46 @@ public class HTTPServer implements Runnable {
     System.out.println("Checking validity of port argument..");
     try {
       Integer.parseInt(arg);
-      System.out.println("ARGUMENT VALID!");
+      System.out.println("Port argument VALID!");
       return true;
     } catch (Exception e) {
-      System.out.println("ARGUMENT INVALID!");
+      System.out.println("Port argument INVALID!");
+      // Set default value for invalid argument
+      port = 8888;
       return false;
     }
   }
 
 
-  private String checkType(String request) {
-    if (request.endsWith(".html") || request.endsWith(".html")) {
-        return "text/html";
-    } else if (request.endsWith(".jpg")) {
-        return "image/jpeg";  
-    } else if (request.endsWith(".png")) {
-        return "image/png";
-    } else {
-        return "text/plain";
+  private static boolean checkPathArg(String path) {
+    boolean flag;
+    try {
+      Integer.parseInt(path);      // If error occurs, the string is NOT a number, hence being VALID
+      System.out.println("Path argument INVALID!");
+      path = "public";
+      flag = false;
+    } catch (NumberFormatException e) {
+      System.out.println("Path argument VALID!");
+      flag = true;
+    }  
+    if (path.startsWith("..")) {
+      System.out.println("DIRECTORY ACCESS RESTRICTED!\nPATH SET TO DEFAULT.");
+      path = "public";
     }
+    if (path.endsWith("/")) path = path.replace("/", "");
+    if (path.startsWith("./")) path = path.replace("./", "");
+    path = "./" + path + "/";
+    System.out.println("MODIFIED PATH ==> " + path);
+    return flag;
   }
 
 
   public static boolean startup(String[] args) {
-    System.out.println("!====================================!\n\n"+
-        "Attempting to start server..");
-    if (checkPortArg(args[0]) == false) return false;
+    System.out.println("\n!====================================!\n"+
+    "Attempting to start server..");
+    boolean flag = false;
+    if (checkPortArg(args[0]) == false) flag = false;
+
     return true;
   }
 
