@@ -47,21 +47,19 @@ public class HTTPServer implements Runnable {
 
       Scanner user = new Scanner(System.in);
       path = checkPathArg(args[1]);
-      
-      int c = boot(args);
-          // START SERVER
-        ServerSocket serverConnection = null;
+      checkPortArg(args[0]); 
+      ServerSocket serverConnection = null;
         try {   
             // This infinite loop creates new threads if multiple connections are queueing at the chosen port
             serverConnection = new ServerSocket(port);     // Create socket for the server connection
-            System.out.println("Server socket: LISTENING ON PORT "+port);
+            System.out.println("\n  ==== SERVER ====\n  PATH: "+path+"\n  PORT: "+port+"\n  ================\n\nlistening...");
             while (true) {
                 HTTPServer server = new HTTPServer(serverConnection.accept());       // Create server with the socket that is listening for a connection
                 Thread server_thread = new Thread(server);                  // Add the newly created HTTPServer object to a runnable thread
                 server_thread.start();       // thread.start() to run the server on a separate thread to be able to manage it
               }    
             } catch (Exception e) {
-                System.out.println("Error: RUNNABLE TRY/CATCH CLAUSE\n"+e);
+                System.out.println("Error starting server!\n"+e);
             }
   }
 
