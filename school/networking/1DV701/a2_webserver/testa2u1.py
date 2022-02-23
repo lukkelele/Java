@@ -146,4 +146,4 @@ requestPageNotOK('a/b/c/noimage.png', 'Image fail', 404)
 
 # IMPLEMENTED BY ME (lg222xf)
 
-requestPageOK(f'a/b/REDIRECT{fe}', 'Redirected page for error code 302')
+requestPageOK(f'redirect{fe}', 'Redirected page for error code 302')
