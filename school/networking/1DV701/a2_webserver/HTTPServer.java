@@ -154,7 +154,7 @@ public class HTTPServer implements Runnable {
 
     if (requested_file.equals("/redirect.html")) {
       file = new File(root, FOUND); 
-      out.println("HTTP/1.1 302 File Not Found");
+      out.println("HTTP/1.1 302 Found file");
     }
     else {
       file = new File(root, FILE_NOT_FOUND);
@@ -241,10 +241,10 @@ public class HTTPServer implements Runnable {
       System.out.println("DIRECTORY ACCESS RESTRICTED!\nPATH SET TO DEFAULT.");
       path = "public";
     }
-    if (path.endsWith("/")) path = path.replace("/", "");
-    if (path.startsWith("./")) path = path.replace("./", "");
+    path = path.replace("/", "");
+    path = path.replace(".", "");
     path = "./" + path + "/";
-    System.out.println("MODIFIED PATH ==> " + path);
+    System.out.println("Adjusted PATH ==> " + path);
     return path;
   }
 
