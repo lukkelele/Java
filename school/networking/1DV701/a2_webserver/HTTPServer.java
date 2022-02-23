@@ -87,8 +87,9 @@ public class HTTPServer implements Runnable {
       }
 
       file = new File(root, file_request);
-      int len_file = (int) file.length();
-     
+      if (file.getPath().equals("./public/redirect.html")) {
+        file = new File(root, FOUND);
+      }
 
       // For GET methods
       if (method.equals("GET")) {
@@ -105,11 +106,11 @@ public class HTTPServer implements Runnable {
     } catch (IOException e) {
       System.out.println("IOException raised! || file_request = " + file_request + " || "+e);
       File FOUND = new File(root, redirect_url);
-      System.out.println("File =======> " + file.getName() + "\nFOUND ======> " + FOUND.getName());
+      System.out.println("File =======> " + file.getName());
       try {
         send_FILE_NOT_FOUND(out, output, file_request);
       } catch (IOException n) {
-            System.out.println("Whoops!\n" + e);
+            System.out.println("--- FILE NOT FOUND EXCEPTION - ERROR #2 ==> "+n);
       }
     }
   }
@@ -146,10 +147,37 @@ public class HTTPServer implements Runnable {
   }
 
 
+
+  private void send_FILE_NOT_FOUND(BufferedOutputStream output_stream, PrintWriter out, String requested_file) throws IOException {
+    File file;
+    System.out.println("FILE NOT FOUND | REQUESTED FILE ===> "+requested_file);
+
+    if (requested_file.equals("/redirect.html")) {
+      file = new File(root, FOUND); 
+      out.println("HTTP/1.1 302 File Not Found");
+    }
+    else {
+      file = new File(root, FILE_NOT_FOUND);
+      out.println("HTTP/1.1 404 File Not Found");
+    }
+    int len_file = (int) file.length();   // cast to int since file.length is long;
+
+    out.println("Server: cowabunga : 1.0");
+    out.println("Date: " + new Date());
+    out.println("Content-type: " + checkType(requested_file));
+    out.println("Content-length: " + len_file);
+    out.println();
+    out.flush();
+
+    System.out.println("OUTGOING DATA: [FILE: "+file.getPath()+" | LENGTH: "+len_file+" | REQUESTED FILE ===> "+requested_file+"] <-- ERROR MESSAGE");
+  }
+
+
   private void send_FOUND_ERROR(BufferedOutputStream output_stream, PrintWriter output) throws IOException { 
-    System.out.println("=-=-=-=-=-=-=-=- Entered FOUND ERROR ==> ");
+    System.out.println("=-=-=-=-=-=-=-=- ");
     File file = new File(root, redirect_location);
     int len_file = (int) file.length();
+
     output.println("HTTP/1.1 302 FOUND");
     output.println("Server: HTTPServer.java : 1.0");
     output.println("Date: " + new Date());
@@ -158,29 +186,7 @@ public class HTTPServer implements Runnable {
     output.println();
     output.flush();
     
-    System.out.println("OUTGOING DATA: [FILE: "+file.getPath()+" | LENGTH: "+len_file+" | REQUESTED FILE ===> "+file.getPath()+"]");
-  }
-
-
-  private void send_FILE_NOT_FOUND(BufferedOutputStream output_stream, PrintWriter out, String requested_file) throws IOException {
-    File file;
-    if (requested_file.equals(redirect_url)) {
-       System.out.println("FILE REQUESTED IS FOUND AT ANOTHER LOCATION!");
-       send_FOUND_ERROR(output_stream, out);
-    } else {
-      file = new File(root, FILE_NOT_FOUND);
-      System.out.println("FILE NOT FOUND | SENDING ERROR MESSAGE!");
-      int len_file = (int) file.length();   // cast to int since file.length is long;
-
-      out.println("HTTP/1.1 404 File Not Found");
-      out.println("Server: cowabunga : 1.0");
-      out.println("Date: " + new Date());
-      out.println("Content-type: " + checkType(requested_file));
-      out.println("Content-length: " + len_file);
-      out.println();
-      out.flush();
-      System.out.println("OUTGOING DATA: [FILE: "+file.getPath()+" | LENGTH: "+len_file+" | REQUESTED FILE ===> "+file.getPath()+"]");
-    }
+    System.out.println("OUTGOING DATA: [FILE: "+file.getPath()+" | LENGTH: "+len_file+" | REQUESTED FILE ===> "+file.getPath()+"] <-- ERROR MESSAGE");
   }
 
 
