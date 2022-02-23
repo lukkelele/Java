@@ -46,7 +46,7 @@ public class HTTPServer implements Runnable {
       }
 
       Scanner user = new Scanner(System.in);
-      path = checkPathArg(args[1]);
+      checkPathArg(args[1]);
       checkPortArg(args[0]); 
       ServerSocket serverConnection = null;
         try {   
@@ -108,9 +108,7 @@ public class HTTPServer implements Runnable {
         }
       }
     } catch (IOException e) {
-      System.out.println("IOException raised! || file_request = " + file_request + " || "+e);
-      File FOUND = new File(root, redirect_url);
-      System.out.println("File =======> " + file.getName());
+      System.out.println("|| file_request = " + file_request + " || "+e);
       try {
         send_FILE_NOT_FOUND(out, output, file_request);
       } catch (IOException n) {
@@ -156,9 +154,9 @@ public class HTTPServer implements Runnable {
     File file;
     System.out.println("FILE NOT FOUND | REQUESTED FILE ===> "+requested_file);
 
-    if (requested_file.equals("/redirect.html")) {
+    if (requested_file.equals("/redirect.html")) {  // for 302 error simulation
       file = new File(root, FOUND); 
-      out.println("HTTP/1.1 302 Found file");
+      out.println("HTTP/1.1 302 Found");
     }
     else {
       file = new File(root, FILE_NOT_FOUND);
@@ -168,7 +166,7 @@ public class HTTPServer implements Runnable {
 
     out.println("Server: cowabunga : 1.0");
     out.println("Date: " + new Date());
-    out.println("Content-type: " + checkType(requested_file));
+    out.println("Content-type: " + checkType(file.getName()));
     out.println("Content-length: " + len_file);
     out.println();
     out.flush();
@@ -176,22 +174,6 @@ public class HTTPServer implements Runnable {
     System.out.println("OUTGOING DATA: [FILE: "+file.getPath()+" | LENGTH: "+len_file+" | REQUESTED FILE ===> "+requested_file+"] <-- ERROR MESSAGE");
   }
 
-
-  private void send_FOUND_ERROR(BufferedOutputStream output_stream, PrintWriter output) throws IOException { 
-    System.out.println("=-=-=-=-=-=-=-=- ");
-    File file = new File(root, redirect_location);
-    int len_file = (int) file.length();
-
-    output.println("HTTP/1.1 302 FOUND");
-    output.println("Server: HTTPServer.java : 1.0");
-    output.println("Date: " + new Date());
-    output.println("Content-type: "+checkType(file.getName()));
-    output.println("Content-length: " + len_file);
-    output.println();
-    output.flush();
-    
-    System.out.println("OUTGOING DATA: [FILE: "+file.getPath()+" | LENGTH: "+len_file+" | REQUESTED FILE ===> "+file.getPath()+"] <-- ERROR MESSAGE");
-  }
 
 
   private String checkType(String request) {
@@ -207,33 +189,21 @@ public class HTTPServer implements Runnable {
   }
 
 
-  private static int boot(String[] args) {
-    int c = 0;
-    if (checkPortArg(args[0]) == true) {    // if valid command line argument
-      c = 1;                                // For switch clause
-    } 
-    return c;
-  }
-
-
-  private static boolean checkPortArg(String arg) {
+  private static void checkPortArg(String arg) {
     System.out.println("Checking validity of port argument..");
     try {
       int p = Integer.parseInt(arg);
       System.out.println("Port argument VALID!");
       port = p;
-      return true;
     } catch (Exception e) {
       System.out.println("Port argument INVALID!\nCorrected to predefined port "+default_port);
       // Set default value for invalid argument
       port = 8888;
-      return false;
     }
   }
 
 
-  private static String checkPathArg(String path) {
-    boolean flag;
+  private static void checkPathArg(String path) {
     try {
       Integer.parseInt(path);      // If error occurs, the string is NOT a number, hence being VALID
       System.out.println("Path argument INVALID!");
@@ -249,7 +219,6 @@ public class HTTPServer implements Runnable {
     path = path.replace(".", "");
     path = "./" + path + "/";
     System.out.println("Adjusted PATH ==> " + path);
-    return path;
   }
 
 
