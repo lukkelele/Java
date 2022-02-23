@@ -37,6 +37,14 @@ public class HTTPServer implements Runnable {
 
 
   public static void main(String[] args) {
+      
+      int amount_args = args.length;
+      if (amount_args != 2) {
+        System.out.println("Only TWO commands are to be passed!\nSetting default values..");
+        port = default_port;
+        path = root;
+      }
+
       Scanner user = new Scanner(System.in);
       path = checkPathArg(args[1]);
       
@@ -54,11 +62,9 @@ public class HTTPServer implements Runnable {
               }    
             } catch (Exception e) {
                 System.out.println("Error: RUNNABLE TRY/CATCH CLAUSE\n"+e);
-
             }
   }
 
-  
   public void run() {
 
     BufferedReader in = null; 
