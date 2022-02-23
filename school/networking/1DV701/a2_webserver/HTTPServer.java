@@ -20,6 +20,7 @@ public class HTTPServer implements Runnable {
 
   private Socket connection;
   private static int port;
+  private static int default_port = 8888;
   static final String root = "./public/";
   static final String DEFAULT = "index.html";
   static final String FILE_NOT_FOUND = "404.html";
@@ -33,19 +34,7 @@ public class HTTPServer implements Runnable {
 
   public static void main(String[] args) {
       Scanner user = new Scanner(System.in);
-      path = args[1];
-      boolean arg_flag2 = checkPathArg(path);
-      System.out.println("ENTERED PATH ==> " + path);
-      // Path argument validation
-      if (path.startsWith("..")) {
-        System.out.println("DIRECTORY ACCESS RESTRICTED!\nPATH SET TO DEFAULT.");
-        path = "public";
-      }
-      if (path.endsWith("/")) path = path.replace("/", "");
-      if (path.startsWith("./")) path = path.replace("./", "");
-      path = "./" + path + "/";
-
-      System.out.println("MODIFIED PATH ==> " + path);
+      path = checkPathArg(args[1]);
       
       int c = boot(args);
       switch(c) {
@@ -203,11 +192,9 @@ public class HTTPServer implements Runnable {
 
   private static int boot(String[] args) {
     int c = 0;
-    boolean start = startup(args);
-    if (start == true) {
-      c = 1;        // Indicates that server is ready to start
-      port = Integer.parseInt(args[0]);
-    };
+    if (checkPortArg(args[0]) == true) {    // if valid command line argument
+      c = 1;                                // For switch clause
+    } 
     return c;
   }
 
@@ -215,11 +202,12 @@ public class HTTPServer implements Runnable {
   private static boolean checkPortArg(String arg) {
     System.out.println("Checking validity of port argument..");
     try {
-      Integer.parseInt(arg);
+      int p = Integer.parseInt(arg);
       System.out.println("Port argument VALID!");
+      port = p;
       return true;
     } catch (Exception e) {
-      System.out.println("Port argument INVALID!");
+      System.out.println("Port argument INVALID!\nCorrected to predefined port "+default_port);
       // Set default value for invalid argument
       port = 8888;
       return false;
@@ -227,16 +215,14 @@ public class HTTPServer implements Runnable {
   }
 
 
-  private static boolean checkPathArg(String path) {
+  private static String checkPathArg(String path) {
     boolean flag;
     try {
       Integer.parseInt(path);      // If error occurs, the string is NOT a number, hence being VALID
       System.out.println("Path argument INVALID!");
       path = "public";
-      flag = false;
     } catch (NumberFormatException e) {
       System.out.println("Path argument VALID!");
-      flag = true;
     }  
     if (path.startsWith("..")) {
       System.out.println("DIRECTORY ACCESS RESTRICTED!\nPATH SET TO DEFAULT.");
@@ -246,18 +232,9 @@ public class HTTPServer implements Runnable {
     if (path.startsWith("./")) path = path.replace("./", "");
     path = "./" + path + "/";
     System.out.println("MODIFIED PATH ==> " + path);
-    return flag;
+    return path;
   }
 
-
-  public static boolean startup(String[] args) {
-    System.out.println("\n!====================================!\n"+
-    "Attempting to start server..");
-    boolean flag = false;
-    if (checkPortArg(args[0]) == false) flag = false;
-
-    return true;
-  }
 
   BufferedOutputStream getSocketOutput() throws IOException {
     return new BufferedOutputStream(connection.getOutputStream());
