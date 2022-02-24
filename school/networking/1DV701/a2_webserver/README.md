@@ -11,5 +11,11 @@ With the provided error handling, server starts can look like:
 - _java HTTPServer 8882 /public/a/b_ ==> if the port is available and the directory exists the values entered will be the server values
 - _java HTTPServer dir 8218 k23_     ==> this will start the server with the default values for the port and directory
 - _java HTTPSerer public 8888_       ==> because the port and path arguments are misplaced, the default value is selected
+
+If a port is already in use then a bindexception will get thrown and the user is told to try another port.\\
+
 ---
-If 
+
+As far as I've tested, there are no issues with execution.\\
+It is not possible to traverse the directory by setting a relative path such as _'../../../../../../'_ or just _'/etc'_.\\
+The command line argument that specifies the path is itself relative, but to ensure that the 

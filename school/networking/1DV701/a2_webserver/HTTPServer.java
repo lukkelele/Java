@@ -23,16 +23,14 @@ public class HTTPServer implements Runnable {
   private static int port;
   private static int default_port = 8888;
   private static final String default_path = "public";
-  private static final String root = "./public/";
   private static final String DEFAULT = "index.html";
   private static final String FILE_NOT_FOUND = "404.html";
   private static final String FOUND = "302.html";
   private static final String INTERNAL_SERVER_ERROR = "500.html";
   private static String path = "";
-  private static String web_dir = "/home/lukkelele/Code/java/school/networking/1DV701/a2_webserver/";
+  private static String web_dir = "/home/lukkelele/Code/java/school/networking/1DV701/a2_webserver/";     // "absolute path" used to remove possibility of traversing directories 
 
   private static final String redirect_url = "./public/redirect.html";      // Hardcoded for 302 error message
-  private static final String redirect_location =  "clown.png";
 
 
   public HTTPServer(Socket s) {
@@ -126,7 +124,7 @@ public class HTTPServer implements Runnable {
 
       // HARDCODED 302 ERROR HANDLING
       if (file.getPath().equals("./public/redirect.html")) {
-        file = new File(root, FOUND);
+        file = new File(path, FOUND);
       }
 
       // POST
