@@ -49,14 +49,16 @@ public class HTTPServer implements Runnable {
           System.out.println("============\nExample: java HTTPServer 5555 /dir\n=============");
           throw new RuntimeException();
         } else {
-        System.out.println("\nTWO commands are to be passed!\nSetting default values..");
+        System.out.println("\nTWO commands are to be passed!\n");
         // if arguments provided are more than 0 but not 2, set default values
         if (parseInt(args[0]) == true) {  // if the first argument is a number, it is considered to be a port
           port = Integer.parseInt(args[0]);
           path = default_path;            
+          System.out.println("No path was provided, default path set.");
         } else {
           path = args[0];
           port = default_port;
+          System.out.println("No port was provided, predefined port value set.");
         }
         args = new String[2];
         args[0] = String.valueOf(port);
@@ -181,15 +183,6 @@ public class HTTPServer implements Runnable {
   }
 
 
-  private static boolean parseInt(String arg) {
-    try {
-      Integer.parseInt(arg);
-      return true;
-    } catch (NumberFormatException e) {
-      return false;
-    }
-  }
-
 
   private void send_FILE_NOT_FOUND(PrintWriter out, String requested_file) throws IOException {
     File file;
@@ -254,6 +247,7 @@ public class HTTPServer implements Runnable {
 
 
   private static String checkPathArg(String path) {
+    String s = "";
     try {
       Integer.parseInt(path);      // If error occurs, the string is NOT a number, hence being VALID
       System.out.println("Path argument INVALID!");
@@ -269,24 +263,43 @@ public class HTTPServer implements Runnable {
     File dir = new File(web_dir, path); // web_dir provides a structure to prevent directory traversals
 
     if (dir.isDirectory()) {
+      String[] path_split = path.split("/");
+      int len_pathsplit = path_split.length;
+      // Cleans up provided paths with multiple sideslashes and dots
+      for (int k = 0 ; k < len_pathsplit ; k++) {
+        if (!path_split[k].isEmpty()) s += path_split[k] + "/";     // if character at index k is empty, do NOT add a '/'
+      }
       path = web_dir + path + "/";
+      return s;
     } else {
       System.out.println("No relative path found going by "+path+".");
       System.out.println("To prevent directory traversals, the default value will be set since the provided relative path is illegal.");
       path = web_dir + default_path + "/";      // Default path is set
+      return path;
     }
-    return path;
+
   }
+
 
   // Method to return new output stream, is not necessary but it makes the code a bit easier to read
   BufferedOutputStream getSocketOutput() throws IOException {
     return new BufferedOutputStream(connection.getOutputStream());
   }
 
+
   // Method to return new input stream, is not necessary but it makes the code a bit easier to read
   BufferedReader getSocketInput() throws IOException {
     return new BufferedReader(new InputStreamReader(connection.getInputStream()));
   }
 
+
+  private static boolean parseInt(String arg) {
+    try {
+      Integer.parseInt(arg);
+      return true;
+    } catch (NumberFormatException e) {
+      return false;
+    }
+  }
 
 }
