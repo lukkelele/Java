@@ -95,6 +95,12 @@ public class HTTPServer implements Runnable {
         file = new File(root, FOUND);
       }
 
+      // POST
+      if (method.equals("POST")) {
+        System.out.println("POST ==> " + header);
+        
+      }
+
       // For GET methods
       if (method.equals("GET")) {
        if (file.isDirectory()) {
