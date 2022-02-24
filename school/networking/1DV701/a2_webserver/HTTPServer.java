@@ -70,7 +70,8 @@ public class HTTPServer implements Runnable {
         try {   
             // This infinite loop creates new threads if multiple connections are queueing at the chosen port
             serverConnection = new ServerSocket(port);     // Create socket for the server connection
-            System.out.println("\n  ==== SERVER ====\n  PATH: "+path+"\n  PORT: "+port+"\n  ================\n\nlistening...");
+            String rel_path = path.replace(web_dir, ""); 
+            System.out.println("\n  ==== SERVER ====\n  PATH: "+rel_path+"\n  PORT: "+port+"\n  ================\n\nlistening...");
             while (true) {
                 HTTPServer server = new HTTPServer(serverConnection.accept());       // Create server with the socket that is listening for a connection
                 Thread server_thread = new Thread(server);                  // Add the newly created HTTPServer object to a runnable thread
@@ -247,8 +248,7 @@ public class HTTPServer implements Runnable {
       path = default_path;
     }
     path = path.replace(".", "");
-    path = path.replace("/", "");
-    //path = "./" + path + "/";
+
     File dir = new File(web_dir, path);
     if (dir.isDirectory()) {
       path = web_dir + path + "/";
