@@ -21,11 +21,13 @@ public class HTTPServer implements Runnable {
   private Socket connection;
   private static int port;
   private static int default_port = 8888;
+  private static final String default_path = "public";
   private static final String root = "./public/";
   private static final String DEFAULT = "index.html";
   private static final String FILE_NOT_FOUND = "404.html";
   private static final String FOUND = "302.html";
   private static String path = "";
+  private static String web_dir = "/home/lukkelele/Code/java/school/networking/1DV701/a2_webserver/";
 
   private static final String redirect_url = "./public/redirect.html";      // Hardcoded for 302 error message
   private static final String redirect_location =  "clown.png";
@@ -36,18 +38,34 @@ public class HTTPServer implements Runnable {
   }
 
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws RuntimeException {
       
       int amount_args = args.length;
       if (amount_args != 2) {
-        System.out.println("Only TWO commands are to be passed!\nSetting default values..");
-        port = default_port;
-        path = root;
+        if (amount_args == 0) {
+          System.out.println("\nTwo command line arguments have to be passed when executing \"java HTTPServer [arg1] [arg2]\".\n"+
+          "[arg1] is the desired port to run the server on.\n[arg2] is the RELATIVE path to where the server directory is held.");
+          System.out.println("============\nExample: java HTTPServer 5555 /dir\n=============");
+          throw new RuntimeException();
+        } else {
+        System.out.println("\nTWO commands are to be passed!\nSetting default values..");
+        // if arguments provided are more than 0 but not 2, set default values
+        if (parseInt(args[0]) == true) {  // if the first argument is a number, it is considered to be a port
+          port = Integer.parseInt(args[0]);
+          path = default_path;            
+        } else {
+          path = args[0];
+          port = default_port;
+        }
+        args = new String[2];
+        args[0] = String.valueOf(port);
+        args[1] = path;
+        }
       }
 
       Scanner user = new Scanner(System.in);
-      checkPathArg(args[1]);
-      checkPortArg(args[0]); 
+      path = checkPathArg(args[1]);
+      port = checkPortArg(args[0]); 
       ServerSocket serverConnection = null;
         try {   
             // This infinite loop creates new threads if multiple connections are queueing at the chosen port
@@ -155,6 +173,15 @@ public class HTTPServer implements Runnable {
   }
 
 
+  private static boolean parseInt(String arg) {
+    try {
+      Integer.parseInt(arg);
+      return true;
+    } catch (NumberFormatException e) {
+      return false;
+    }
+  }
+
 
   private void send_FILE_NOT_FOUND(BufferedOutputStream output_stream, PrintWriter out, String requested_file) throws IOException {
     File file;
@@ -195,36 +222,42 @@ public class HTTPServer implements Runnable {
   }
 
 
-  private static void checkPortArg(String arg) {
-    System.out.println("Checking validity of port argument..");
+  private static int checkPortArg(String arg) {
     try {
       int p = Integer.parseInt(arg);
-      System.out.println("Port argument VALID!");
-      port = p;
+      return port = p;
     } catch (Exception e) {
       System.out.println("Port argument INVALID!\nCorrected to predefined port "+default_port);
       // Set default value for invalid argument
-      port = 8888;
+      return port = 8888;
     }
   }
 
 
-  private static void checkPathArg(String path) {
+  private static String checkPathArg(String path) {
     try {
       Integer.parseInt(path);      // If error occurs, the string is NOT a number, hence being VALID
       System.out.println("Path argument INVALID!");
-      path = "public";
+      return path = default_path;
     } catch (NumberFormatException e) {
-      System.out.println("Path argument VALID!");
+      // VALID
     }  
     if (path.startsWith("..")) {
       System.out.println("DIRECTORY ACCESS RESTRICTED!\nPATH SET TO DEFAULT.");
-      path = "public";
+      path = default_path;
     }
-    path = path.replace("/", "");
     path = path.replace(".", "");
-    path = "./" + path + "/";
-    System.out.println("Adjusted PATH ==> " + path);
+    path = path.replace("/", "");
+    //path = "./" + path + "/";
+    File dir = new File(web_dir, path);
+    if (dir.isDirectory()) {
+      path = web_dir + path + "/";
+    } else {
+      System.out.println("No relative path found going by "+path+".");
+      System.out.println("To prevent directory traversals, the default value will be set since the provided relative path is illegal.");
+      path = web_dir + default_path + "/";
+    }
+    return path;
   }
 
 
