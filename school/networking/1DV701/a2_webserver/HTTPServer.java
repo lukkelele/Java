@@ -18,7 +18,7 @@ import java.util.Date;
 
 public class HTTPServer implements Runnable {
 
-  private Socket connection;
+  private static Socket connection;
   private static int port;
   private static int default_port = 8888;
   private static final String default_path = "public";
@@ -26,6 +26,7 @@ public class HTTPServer implements Runnable {
   private static final String DEFAULT = "index.html";
   private static final String FILE_NOT_FOUND = "404.html";
   private static final String FOUND = "302.html";
+  private static final String INTERNAL_SERVER_ERROR = "500.html";
   private static String path = "";
   private static String web_dir = "/home/lukkelele/Code/java/school/networking/1DV701/a2_webserver/";
 
@@ -79,6 +80,13 @@ public class HTTPServer implements Runnable {
               }    
             } catch (Exception e) {
                 System.out.println("Error starting server!\n"+e);
+                try {
+                  PrintWriter output = new PrintWriter(connection.getOutputStream());          // true for enabling autoflush
+                  send_INTERNAL_SERVER_ERROR(output);
+                 
+                } catch (IOException c) {
+                  System.out.println("SEVERE ISSUES ACCOMPLISHED"); 
+                }
             }
   }
 
@@ -97,32 +105,31 @@ public class HTTPServer implements Runnable {
       String s, method;
 
       // Read request
-      s = in.readLine();                           // Read first line to get mandatory info
+      s = in.readLine();                           // Read first line to get header info
       String[] header = s.split(" ");              // Split header in to three pieces
       method = header[0].trim().toUpperCase();     // Trim to remove potential whitespaces. Could use method.matches instead as well
-      file_request = header[1].toLowerCase();
-      // Find out the name of the file to respond with
+      file_request = header[1].toLowerCase();      // keep file requests to lowercase since it is the standard
+
       if (file_request.trim().equals("http")) {    // If file request is "empty", for initial responses etc.
         System.out.println("File request empty.. setting default");
         file_request = DEFAULT;
       } else {
         file_request = file_request.split(" ")[0]; // If file request isn't empty, remove the "http" part 
       }
+      file = new File(path, file_request);
 
-      file = new File(root, file_request);
+      // HARDCODED 302 ERROR HANDLING
       if (file.getPath().equals("./public/redirect.html")) {
         file = new File(root, FOUND);
       }
 
       // POST
       if (method.equals("POST")) {
-        System.out.println("POST ==> " + header);
-        
       }
 
-      // For GET methods
+      // GET
       if (method.equals("GET")) {
-       if (file.isDirectory()) {
+       if (file.isDirectory()) {  // if file requested is a directory, fetch the index.html file inside that directory
           for (File f : file.listFiles()) {
             if (f.getName().contains("index.html")) {
               send_data(out, output, f);
@@ -133,9 +140,8 @@ public class HTTPServer implements Runnable {
         }
       }
     } catch (IOException e) {
-      System.out.println("|| file_request = " + file_request + " || "+e);
       try {
-        send_FILE_NOT_FOUND(out, output, file_request);
+        send_FILE_NOT_FOUND(output, file_request);
       } catch (IOException n) {
             System.out.println("--- FILE NOT FOUND EXCEPTION - ERROR #2 ==> "+n);
       }
@@ -146,6 +152,7 @@ public class HTTPServer implements Runnable {
   private void send_data(BufferedOutputStream output_stream, PrintWriter output, File file) throws IOException { 
     byte[] file_data = read_file(file);
     int len_file = (int) file.length();
+
     output.println("HTTP/1.1 200 OK");
     output.println("Server: HTTPServer.java : 1.0");
     output.println("Date: " + new Date());
@@ -184,16 +191,13 @@ public class HTTPServer implements Runnable {
   }
 
 
-  private void send_FILE_NOT_FOUND(BufferedOutputStream output_stream, PrintWriter out, String requested_file) throws IOException {
+  private void send_FILE_NOT_FOUND(PrintWriter out, String requested_file) throws IOException {
     File file;
-    System.out.println("FILE NOT FOUND | REQUESTED FILE ===> "+requested_file);
-
     if (requested_file.equals("/redirect.html")) {  // for 302 error simulation
-      file = new File(root, FOUND); 
+      file = new File(path, FOUND); 
       out.println("HTTP/1.1 302 Found");
-    }
-    else {
-      file = new File(root, FILE_NOT_FOUND);
+    } else {
+      file = new File(path, FILE_NOT_FOUND);
       out.println("HTTP/1.1 404 File Not Found");
     }
     int len_file = (int) file.length();   // cast to int since file.length is long;
@@ -208,6 +212,20 @@ public class HTTPServer implements Runnable {
     System.out.println("OUTGOING DATA: [FILE: "+file.getPath()+" | LENGTH: "+len_file+" | REQUESTED FILE ===> "+requested_file+"] <-- ERROR MESSAGE");
   }
 
+
+  private static void send_INTERNAL_SERVER_ERROR(PrintWriter output) throws IOException {
+    File file = new File(path, INTERNAL_SERVER_ERROR);
+    int len_file = (int) file.length();
+    output.println("HTTP/1.1 500 Internal Server Error");
+    output.println("Server: HTTPServer.java : 1.0");
+    output.println("Date: " + new Date());
+    output.println("Content-type: text/html");
+    output.println("Content-length: " + len_file);
+    output.println();
+    output.flush();
+
+    System.out.println("OUTGOING DATA: [FILE: "+file.getPath()+" | LENGTH: "+len_file+" ] <-- ERROR MESSAGE");
+  }
 
 
   private String checkType(String request) {
@@ -241,31 +259,31 @@ public class HTTPServer implements Runnable {
       System.out.println("Path argument INVALID!");
       return path = default_path;
     } catch (NumberFormatException e) {
-      // VALID
+      // VALID PATH, DO NOTHING
     }  
-    if (path.startsWith("..")) {
+    if (path.startsWith("..")) {  // 'cd ..' will go back one directory
       System.out.println("DIRECTORY ACCESS RESTRICTED!\nPATH SET TO DEFAULT.");
       path = default_path;
     }
-    path = path.replace(".", "");
+    path = path.replace(".", "");   // Remove ALL dots
+    File dir = new File(web_dir, path); // web_dir provides a structure to prevent directory traversals
 
-    File dir = new File(web_dir, path);
     if (dir.isDirectory()) {
       path = web_dir + path + "/";
     } else {
       System.out.println("No relative path found going by "+path+".");
       System.out.println("To prevent directory traversals, the default value will be set since the provided relative path is illegal.");
-      path = web_dir + default_path + "/";
+      path = web_dir + default_path + "/";      // Default path is set
     }
     return path;
   }
 
-
+  // Method to return new output stream, is not necessary but it makes the code a bit easier to read
   BufferedOutputStream getSocketOutput() throws IOException {
     return new BufferedOutputStream(connection.getOutputStream());
   }
 
-
+  // Method to return new input stream, is not necessary but it makes the code a bit easier to read
   BufferedReader getSocketInput() throws IOException {
     return new BufferedReader(new InputStreamReader(connection.getInputStream()));
   }
