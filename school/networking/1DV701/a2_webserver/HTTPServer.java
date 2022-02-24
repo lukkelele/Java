@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Dictionary;
@@ -79,9 +80,11 @@ public class HTTPServer implements Runnable {
                 HTTPServer server = new HTTPServer(serverConnection.accept());       // Create server with the socket that is listening for a connection
                 Thread server_thread = new Thread(server);                  // Add the newly created HTTPServer object to a runnable thread
                 server_thread.start();       // thread.start() to run the server on a separate thread to be able to manage it
-              }    
-            } catch (Exception e) {
-                System.out.println("Error starting server!\n"+e);
+      
+            }
+        }    
+             catch (IOException b) {
+                System.out.println("Error starting server!\nThe port is already in use!\nTry another one.\n"+b);
                 try {
                   PrintWriter output = new PrintWriter(connection.getOutputStream());          // true for enabling autoflush
                   send_INTERNAL_SERVER_ERROR(output);
@@ -89,8 +92,9 @@ public class HTTPServer implements Runnable {
                 } catch (IOException c) {
                   System.out.println("SEVERE ISSUES ACCOMPLISHED"); 
                 }
-            }
-  }
+             }
+  } 
+
 
   public void run() {
 
