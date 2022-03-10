@@ -2,4 +2,4 @@ TFTP server
 
 
 
-![](./TFTP_packets_img.png "header structure")
+![](./img/TFTP_packets_img.png "header structure")
