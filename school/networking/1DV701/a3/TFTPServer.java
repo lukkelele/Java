@@ -2,6 +2,7 @@
 
 
 import java.nio.ByteBuffer;
+import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -106,12 +107,14 @@ public class TFTPServer
 	 */
 	private InetSocketAddress receiveFrom(DatagramSocket socket, byte[] buf) 
 	{
-		// Create datagram packet
-		
+    SocketAddress socketAddress;
+    // Create datagram packet
+    DatagramPacket in_packet = new DatagramPacket(BUFSIZE);
 		// Receive packet
-		
+	  socket.recieve(in_packet);	
 		// Get client address and port from the packet
-		
+    socketAddress = in_packet.getSocketAddress();
+    
 		return socketAddress;
 	}
 
@@ -161,14 +164,17 @@ public class TFTPServer
 	/**
 	 *To be implemented
 	 */
-	private boolean send_DATA_receive_ACK(params)
-	{return true;}
+	private boolean send_DATA_receive_ACK(params) {
+    return true;
+  }
 	
-	private boolean receive_DATA_send_ACK(params)
-	{return true;}
+	private boolean receive_DATA_send_ACK(params) {
+    return true;
+  }
 	
-	private void send_ERR(params)
-	{}
+  private void send_ERR(params) {
+
+  }
 	
 }
 
