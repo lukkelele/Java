@@ -2,11 +2,15 @@
 
 
 import java.nio.ByteBuffer;
+import java.io.File;
+import java.io.FileInputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.SocketException;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 
 public class TFTPServer 
 {
@@ -85,7 +89,6 @@ public class TFTPServer
 					try 
 					{
 						DatagramSocket sendSocket= new DatagramSocket(0);
-
 						// Connect to client
 						sendSocket.connect(clientAddress);						
 						
@@ -150,14 +153,6 @@ public class TFTPServer
 	{
     ByteBuffer container = ByteBuffer.wrap(buf);
     short opcode = container.getShort();
-    // Open the requested file
-    if (opcode == 1) {
-      // if opcode == 1 then it is a READ REQUEST
-      requestedFile = requestedFile.insert(0, "./read/");
-      System.out.println("Requested file ==> "+requestedFile);
-    }
-
-    
 		return opcode;
 	}
   
@@ -172,16 +167,13 @@ public class TFTPServer
   
 	private void HandleRQ(DatagramSocket sendSocket, String requestedFile, int opcode) 
 	{		
-		if(opcode == OP_RRQ)
-		{
-			boolean result = send_DATA_receive_ACK(params);
+		if(opcode == OP_RRQ) {
+			boolean result = send_DATA_receive_ACK(sendSocket, requestedFile);
 		}
-		else if (opcode == OP_WRQ) 
-		{
-			boolean result = receive_DATA_send_ACK(params);
+		else if (opcode == OP_WRQ) {
+			boolean result = receive_DATA_send_ACK(sendSocket, requestedFile);
 		}
-		else 
-		{
+    else {
 			System.err.println("Invalid request. Sending an error packet.");
 			// See "TFTP Formats" in TFTP specification for the ERROR packet contents
 			send_ERR(params);
@@ -189,20 +181,45 @@ public class TFTPServer
     }
   }
 	
-	/**
-	 * To be implemented
-	 */
-  private boolean send_DATA_receive_ACK(byte params) {
+
+  // IMPLEMENT
+
+  // Read and Write
+  private boolean send_DATA_receive_ACK(DatagramSocket socket, String requestedFile) {
+    try {
+      int pkg_length, data_length;
+      FileInputStream file_input = null;
+      File file = new File(READDIR, requestedFile);
+      if (file.isFile() && file.canRead()) {  // Check if file is correctly created
+        // Create byte array that fit the message size
+        data_length = (int) file.length();  // Size of file
+        byte[] pkg = new byte[(int) data_length];
+        file_input = new FileInputStream(file, data_offset, DATA_SIZE);
+        file_input.read(pkg);  // read the file
+        file_input.close();
+        // opcode 3 for DATA PACKET
+        pkg[opcode_offset] = OP_DAT;
+        pkg[block_offset] = 1;  // given that package size is < 511 bytes
+        pkg_length = opcode_offset + block_offset + data_length;
+        DatagramPacket datagram = new DatagramPacket(pkg, pkg_length);
+      }
+    } catch (Exception e) {
+
+    }
     return true;
   }
-	
-	private boolean receive_DATA_send_ACK(byte params) {
+
+
+	private boolean receive_DATA_send_ACK(DatagramSocket socket, String requestedFile) {
+     
     return true;
   }
-	
+
+
   private void send_ERR(byte params) {
 
   }
+
 
 }
 
