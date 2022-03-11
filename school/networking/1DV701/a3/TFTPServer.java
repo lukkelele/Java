@@ -107,21 +107,23 @@ public class TFTPServer
                         //System.out.printf("%s request for %s from %s using port %d\n", (reqtype == OP_RRQ)?"Read":"Write", clientAddress.getHostName(), clientAddress.getPort());
                         System.out.println("Request: "+reqtype+"\nHost: "+clientAddress.getAddress()+"\nPort: "+clientAddress.getPort()); 
 						// Read request
-						if (reqtype == OP_RRQ) 
-						{      
+						if (reqtype == OP_RRQ) {      
+                            System.out.println("OP_RRQ <----");
 							requestedFile.insert(0, READDIR);
 							HandleRQ(sendSocket, requestedFile.toString(), OP_RRQ);
+                            System.out.println("HandleRQ SUCCESSFUL!");
 						}
 						// Write request
-						else 
-						{                       
+                        else {   
+                            System.out.println("OP_RRQ <----");
 							requestedFile.insert(0, WRITEDIR);
 							HandleRQ(sendSocket,requestedFile.toString(),OP_WRQ);  
 						}
 						sendSocket.close();
 					} 
-					catch (SocketException e) 
-						{e.printStackTrace();}
+					catch (SocketException e) {
+                        e.printStackTrace(); 
+                    }
 				}
 			}.start();
 		}
@@ -147,8 +149,7 @@ public class TFTPServer
     port = in_packet.getPort();
     inet_addr = in_packet.getAddress();
     inet_socket_addr = new InetSocketAddress(inet_addr, port);
-
-	
+	System.out.println("Returning from \"receiveFrom\"!");
     return inet_socket_addr;
 	}
 
@@ -164,7 +165,7 @@ public class TFTPServer
 	{
     ByteBuffer container = ByteBuffer.wrap(buf);
     short opcode = container.getShort();
-		return opcode;
+    return opcode;
 	}
   
   
@@ -179,10 +180,23 @@ public class TFTPServer
 	private void HandleRQ(DatagramSocket sendSocket, String requestedFile, int opcode) 
 	{		
 		if(opcode == OP_RRQ) {
+            System.out.println("--> send_DATA_receive_ACK");
 			boolean result = send_DATA_receive_ACK(sendSocket, requestedFile);
-		}
+            if (result == true) { 
+                System.out.println("datagram sent with no errors!");
+            } else {
+                System.out.println("ERROR sending DATAGRAM!!!");
+            }
+        }
 		else if (opcode == OP_WRQ) {
+            System.out.println("--> receive_DATA_send_ACK");
 			boolean result = receive_DATA_send_ACK(sendSocket, requestedFile);
+            if (result == true) { 
+                System.out.println("datagram sent with no errors!");
+            } else {
+                System.out.println("ERROR sending DATAGRAM!!!");
+            }
+            
 		}
     else {
 			System.err.println("Invalid request. Sending an error packet.");
@@ -198,21 +212,24 @@ public class TFTPServer
   // Read and Write
   private boolean send_DATA_receive_ACK(DatagramSocket socket, String requestedFile) {
     try {
-      int pkg_length, data_length;
+      int pkg_length;
+      byte[] pkg;
       FileInputStream file_input;
       File file = new File(READDIR, requestedFile);
       if (file.isFile() && file.canRead()) {  // Check if file is correctly created
         // Create byte array that fit the message size
-        data_length = (int) file.length();  // Size of file
-        byte[] pkg = new byte[(int) data_length];
+        System.out.println("FILENAME: "+file.getName()+"\nFILE PATH: "+file.getAbsolutePath());
+        pkg_length = (int) file.length() + 4;  // Size of file
+        pkg = new byte[(int) pkg_length];
         file_input = new FileInputStream(file);
-        file_input.read(pkg);  // read the file
+        file_input.read(pkg, 4, pkg_length);  // read the file
         file_input.close();
         // opcode 3 for DATA PACKET
         pkg[opcode_offset] = OP_DAT;
         pkg[block_offset] = 1;  // given that package size is < 511 bytes
-        pkg_length = opcode_offset + block_offset + data_length;
         DatagramPacket datagram = new DatagramPacket(pkg, pkg_length);
+        socket.send(datagram);
+        System.out.println("Datagram sent!");
       }
     } catch (Exception e) {
 
