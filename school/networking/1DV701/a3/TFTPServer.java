@@ -4,13 +4,17 @@
 import java.nio.ByteBuffer;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+
+
 
 public class TFTPServer 
 {
@@ -70,11 +74,15 @@ public class TFTPServer
 		System.out.printf("Listening at port %d for new requests\n", TFTPPORT);
 
 		// Loop to handle client requests 
-		while (true) 
-		{        
-			
-			final InetSocketAddress clientAddress = receiveFrom(socket, buf);
-			
+		while (true) {
+            final InetSocketAddress clientAddress;    
+			try {
+			    clientAddress = receiveFrom(socket, buf);
+                System.out.println("clientAddress: "+clientAddress);
+            } catch (IOException i) {
+                System.out.println("IOException --> "+i);
+                break;
+            }
 			// If clientAddress is null, an error occurred in receiveFrom()
 			if (clientAddress == null) 
 				continue;
@@ -92,10 +100,12 @@ public class TFTPServer
 						// Connect to client
 						sendSocket.connect(clientAddress);						
 						
-						System.out.printf("%s request for %s from %s using port %d\n",
+						/*System.out.printf("%s request for %s from %s using port %d\n",
 								(reqtype == OP_RRQ)?"Read":"Write",
-								clientAddress.getHostName(), clientAddress.getPort());  
-								
+								clientAddress.getHostName(), clientAddress.getPort());  */
+							
+                        //System.out.printf("%s request for %s from %s using port %d\n", (reqtype == OP_RRQ)?"Read":"Write", clientAddress.getHostName(), clientAddress.getPort());
+                        System.out.println("Request: "+reqtype+"\nHost: "+clientAddress.getAddress()+"\nPort: "+clientAddress.getPort()); 
 						// Read request
 						if (reqtype == OP_RRQ) 
 						{      
@@ -125,20 +135,21 @@ public class TFTPServer
 	 * @param buf (where to store the read data)
 	 * @return socketAddress (the socket address of the client)
 	 */
-	private InetSocketAddress receiveFrom(DatagramSocket socket, byte[] buf) 
-	{
+	private InetSocketAddress receiveFrom(DatagramSocket socket, byte[] buf) throws IOException {
     int port;
-    InetSocketAddress inet_socket_addr;
-    InetAdress inet_addr;
+    InetSocketAddress inet_socket_addr = null;
+    InetAddress inet_addr = null;
     // Create datagram packet
     DatagramPacket in_packet = new DatagramPacket(buf, BUFSIZE);
 		// Receive packet
-	  socket.recieve(in_packet);	
+	socket.receive(in_packet);	
 		// Get client address and port from the packet
     port = in_packet.getPort();
     inet_addr = in_packet.getAddress();
     inet_socket_addr = new InetSocketAddress(inet_addr, port);
-		return inet_socket_addr;
+
+	
+    return inet_socket_addr;
 	}
 
 	/**
@@ -176,7 +187,7 @@ public class TFTPServer
     else {
 			System.err.println("Invalid request. Sending an error packet.");
 			// See "TFTP Formats" in TFTP specification for the ERROR packet contents
-			send_ERR(params);
+			send_ERR(sendSocket);
 			return;
     }
   }
@@ -188,13 +199,13 @@ public class TFTPServer
   private boolean send_DATA_receive_ACK(DatagramSocket socket, String requestedFile) {
     try {
       int pkg_length, data_length;
-      FileInputStream file_input = null;
+      FileInputStream file_input;
       File file = new File(READDIR, requestedFile);
       if (file.isFile() && file.canRead()) {  // Check if file is correctly created
         // Create byte array that fit the message size
         data_length = (int) file.length();  // Size of file
         byte[] pkg = new byte[(int) data_length];
-        file_input = new FileInputStream(file, data_offset, DATA_SIZE);
+        file_input = new FileInputStream(file);
         file_input.read(pkg);  // read the file
         file_input.close();
         // opcode 3 for DATA PACKET
@@ -216,7 +227,7 @@ public class TFTPServer
   }
 
 
-  private void send_ERR(byte params) {
+  private void send_ERR(DatagramSocket socket) {
 
   }
 
