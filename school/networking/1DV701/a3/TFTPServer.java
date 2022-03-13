@@ -110,7 +110,7 @@ public class TFTPServer
 						if (reqtype == OP_RRQ) {      
               System.out.println("Incoming READ request...");
 							requestedFile.insert(0, READDIR);
-							HandleRQ(sendSocket, requestedFile.toString(), OP_RRQ);
+							HandleRQ(sendSocket, file_name, OP_RRQ);
               System.out.println("READ request done!\n-------------");
 						}
 						// Write request
@@ -133,7 +133,6 @@ public class TFTPServer
   String get_filename(int i, byte end, StringBuffer s) {
     while (buf[i] != end) {
       s.append((char) buf[i++]);
-      System.out.println("s = "+s);
     } 
     System.out.println("filename ------> "+s.toString());
     return s.toString();
@@ -222,19 +221,21 @@ public class TFTPServer
       int pkg_length;
       byte[] pkg;
       FileInputStream file_input;
-      File file = new File(READDIR, file_name);
+      File file = new File("./read/RFC1350.txt");
       // Create byte array that fit the message size
       System.out.println("FILENAME: "+file.getName()+"\nFILE PATH: "+file.getPath());
       pkg_length = (int) file.length();  // Size of file
       pkg = new byte[pkg_length + 4];
       System.out.println("pkg-len: "+pkg.length+"pkg_length --> "+pkg_length);
       file_input = new FileInputStream(file);
-      //file_input.read(pkg, 0, pkg_length);  // read the file
       file_input.read(pkg, 4, pkg_length);  // read the file
       file_input.close();
       // opcode 3 for DATA PACKET
       pkg[0] = 3;
       pkg[block_offset] = 1;  // given that package size is < 511 bytes
+      //for (byte b : pkg) {
+      //  System.out.println(b);
+      //}
       DatagramPacket datagram = new DatagramPacket(pkg, pkg.length, socket.getInetAddress(), socket.getPort());
       System.out.println("=== DATAGRAM ===\n- addr: "+datagram.getAddress()+"\n- data: "+datagram.getData()+"\n- port: "+datagram.getPort());
       socket.send(datagram);
