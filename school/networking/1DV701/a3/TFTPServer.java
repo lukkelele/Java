@@ -38,6 +38,7 @@ public class TFTPServer
   static final int file_offset = 0;
   static final int data_offset = 4;
 
+  static InetSocketAddress clientAddress;
   byte[] buf;
   String file_name;
 
@@ -81,7 +82,6 @@ public class TFTPServer
 
 		// Loop to handle client requests 
 		while (true) {
-      final InetSocketAddress clientAddress;    
 			try {
             clientAddress = receiveFrom(socket, buf);
             System.out.println("clientAddress: "+clientAddress);
@@ -91,7 +91,7 @@ public class TFTPServer
       }
 			// If clientAddress is null, an error occurred in receiveFrom()
 			if (clientAddress == null) 
-				continue;
+				break;
 
 			final StringBuffer requestedFile = new StringBuffer();
 			final int reqtype = ParseRQ(buf, requestedFile);
@@ -219,25 +219,23 @@ public class TFTPServer
   private boolean send_DATA_receive_ACK(DatagramSocket socket, String requestedFile) {
     try {
       int pkg_length;
-      byte[] pkg;
+      byte[] pkg = new byte[DATA_SIZE+4];
       FileInputStream file_input;
       File file = new File("./read/RFC1350.txt");
-      // Create byte array that fit the message size
-      System.out.println("FILENAME: "+file.getName()+"\nFILE PATH: "+file.getPath());
-      pkg_length = (int) file.length();  // Size of file
-      pkg = new byte[pkg_length + 4];
-      System.out.println("pkg-len: "+pkg.length+"pkg_length --> "+pkg_length);
       file_input = new FileInputStream(file);
-      file_input.read(pkg, 4, pkg_length);  // read the file
+      file_input.read(pkg, 4, DATA_SIZE);  // read the file
       file_input.close();
+      // Create byte array that fit the message size
+      pkg_length = (int) file.length();  // Size of file
       // opcode 3 for DATA PACKET
       pkg[0] = 3;
-      pkg[block_offset] = 1;  // given that package size is < 511 bytes
+      pkg[2] = 1;  // given that package size is < 511 bytes
       //for (byte b : pkg) {
       //  System.out.println(b);
       //}
-      DatagramPacket datagram = new DatagramPacket(pkg, pkg.length, socket.getInetAddress(), socket.getPort());
-      System.out.println("=== DATAGRAM ===\n- addr: "+datagram.getAddress()+"\n- data: "+datagram.getData()+"\n- port: "+datagram.getPort());
+      DatagramPacket datagram = new DatagramPacket(pkg, pkg_length, clientAddress);
+      System.out.println("=== DATAGRAM ===\n- addr: "+datagram.getAddress()+"\n- data: "+datagram.getData()+"\n- port: "+datagram.getPort()
+          +"\n- msg length: "+datagram.getLength()+"\n- ip: "+clientAddress.toString()+"\n================");
       socket.send(datagram);
       System.out.println("Datagram sent!");
     } catch (Exception e) {
