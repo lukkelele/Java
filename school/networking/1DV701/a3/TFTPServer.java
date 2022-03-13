@@ -21,9 +21,9 @@ public class TFTPServer
   public static final int TFTPPORT = 4970;
 	public static final int BUFSIZE = 516;
   public static final int DATA_SIZE = 512;
-	//public static final String READDIR = "/home/lukkelele/Code/java/school/networking/1DV701/a3/read/"; //custom address at your PC
+	public static final String READDIR = "/home/lukkelele/Code/java/school/networking/1DV701/a3/read/"; //custom address at your PC
 	//public static final String WRITEDIR = "/home/lukkelele/Code/java/school/networking/1DV701/a3/write/"; //custom address at your PC
-	public static final String READDIR =  "./read/"; //custom address at your PC
+	//public static final String READDIR =  "./read/"; //custom address at your PC
 	public static final String WRITEDIR = "./write/"; //custom address at your PC
 	// OP codes
 	public static final int OP_RRQ = 1;
@@ -37,6 +37,9 @@ public class TFTPServer
   static final int msg_offset = 4;
   static final int file_offset = 0;
   static final int data_offset = 4;
+
+  byte[] buf;
+  String file_name;
 
   //             RRQ/WRQ   packet
   //
@@ -65,7 +68,7 @@ public class TFTPServer
 
 	private void start() throws SocketException 
 	{
-		byte[] buf= new byte[BUFSIZE];
+		buf= new byte[BUFSIZE];
 		
 		// Create socket
 		DatagramSocket socket= new DatagramSocket(null);
@@ -102,13 +105,7 @@ public class TFTPServer
 						DatagramSocket sendSocket= new DatagramSocket(0);
 						// Connect to client
 						sendSocket.connect(clientAddress);						
-						
-						/*System.out.printf("%s request for %s from %s using port %d\n",
-								(reqtype == OP_RRQ)?"Read":"Write",
-								clientAddress.getHostName(), clientAddress.getPort());  */
-							
-                        //System.out.printf("%s request for %s from %s using port %d\n", (reqtype == OP_RRQ)?"Read":"Write", clientAddress.getHostName(), clientAddress.getPort());
-              System.out.println("Request: "+reqtype+"\nHost: "+clientAddress.getAddress()+"\nPort: "+clientAddress.getPort()); 
+            System.out.println("Request: "+reqtype+"\nHost: "+clientAddress.getAddress()+"\nPort: "+clientAddress.getPort()); 
 						// Read request
 						if (reqtype == OP_RRQ) {      
               System.out.println("Incoming READ request...");
@@ -132,6 +129,15 @@ public class TFTPServer
 		}
 	}
 	
+  
+  String get_filename(int i, byte end, StringBuffer s) {
+    while (buf[i] != end) {
+      s.append((char) buf[i++]);
+      System.out.println("s = "+s);
+    } 
+    System.out.println("filename ------> "+s.toString());
+    return s.toString();
+  }
 
 
 	/**
@@ -167,9 +173,8 @@ public class TFTPServer
 	private int ParseRQ(byte[] buf, StringBuffer requestedFile) {
     ByteBuffer container = ByteBuffer.wrap(buf);
     short opcode = container.getShort();
-    System.out.println("Requested file --> "+requestedFile.toString());
     System.out.println("OPCODE returned: "+opcode);
-
+    file_name = get_filename(1, (byte)0, requestedFile);
     return opcode;
 	}
   
@@ -217,14 +222,12 @@ public class TFTPServer
       int pkg_length;
       byte[] pkg;
       FileInputStream file_input;
-      //File file = new File(READDIR, requestedFile);
-      File file = new File(READDIR, "test.txt");
-      System.out.println("New file created!\n"+file.getPath()+"\nrequestedFile --> "+requestedFile);
+      File file = new File(READDIR, file_name);
       // Create byte array that fit the message size
       System.out.println("FILENAME: "+file.getName()+"\nFILE PATH: "+file.getPath());
       pkg_length = (int) file.length();  // Size of file
       pkg = new byte[pkg_length + 4];
-      System.out.println("pkg-len: "+pkg.length);
+      System.out.println("pkg-len: "+pkg.length+"pkg_length --> "+pkg_length);
       file_input = new FileInputStream(file);
       //file_input.read(pkg, 0, pkg_length);  // read the file
       file_input.read(pkg, 4, pkg_length);  // read the file
