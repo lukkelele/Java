@@ -21,8 +21,10 @@ public class TFTPServer
   public static final int TFTPPORT = 4970;
 	public static final int BUFSIZE = 516;
   public static final int DATA_SIZE = 512;
-	public static final String READDIR = "/home/lukkelele/Code/java/school/networking/1DV701/a3/read/"; //custom address at your PC
-	public static final String WRITEDIR = "/home/lukkelele/Code/java/school/networking/1DV701/a3/write/"; //custom address at your PC
+	//public static final String READDIR = "/home/lukkelele/Code/java/school/networking/1DV701/a3/read/"; //custom address at your PC
+	//public static final String WRITEDIR = "/home/lukkelele/Code/java/school/networking/1DV701/a3/write/"; //custom address at your PC
+	public static final String READDIR =  "./read/"; //custom address at your PC
+	public static final String WRITEDIR = "./write/"; //custom address at your PC
 	// OP codes
 	public static final int OP_RRQ = 1;
 	public static final int OP_WRQ = 2;
@@ -59,7 +61,8 @@ public class TFTPServer
 		catch (SocketException e) 
 			{e.printStackTrace();}
 	}
-	
+
+
 	private void start() throws SocketException 
 	{
 		byte[] buf= new byte[BUFSIZE];
@@ -75,19 +78,19 @@ public class TFTPServer
 
 		// Loop to handle client requests 
 		while (true) {
-            final InetSocketAddress clientAddress;    
+      final InetSocketAddress clientAddress;    
 			try {
-			    clientAddress = receiveFrom(socket, buf);
-                System.out.println("clientAddress: "+clientAddress);
-            } catch (IOException i) {
-                System.out.println("IOException --> "+i);
-                break;
-            }
+            clientAddress = receiveFrom(socket, buf);
+            System.out.println("clientAddress: "+clientAddress);
+      } catch (IOException i) {
+            System.out.println("IOException --> "+i);
+            break;
+      }
 			// If clientAddress is null, an error occurred in receiveFrom()
 			if (clientAddress == null) 
 				continue;
 
-			final StringBuffer requestedFile= new StringBuffer();
+			final StringBuffer requestedFile = new StringBuffer();
 			final int reqtype = ParseRQ(buf, requestedFile);
 
 			new Thread() 
@@ -105,25 +108,25 @@ public class TFTPServer
 								clientAddress.getHostName(), clientAddress.getPort());  */
 							
                         //System.out.printf("%s request for %s from %s using port %d\n", (reqtype == OP_RRQ)?"Read":"Write", clientAddress.getHostName(), clientAddress.getPort());
-                        System.out.println("Request: "+reqtype+"\nHost: "+clientAddress.getAddress()+"\nPort: "+clientAddress.getPort()); 
+              System.out.println("Request: "+reqtype+"\nHost: "+clientAddress.getAddress()+"\nPort: "+clientAddress.getPort()); 
 						// Read request
 						if (reqtype == OP_RRQ) {      
-                            System.out.println("OP_RRQ <----");
+              System.out.println("Incoming READ request...");
 							requestedFile.insert(0, READDIR);
 							HandleRQ(sendSocket, requestedFile.toString(), OP_RRQ);
-                            System.out.println("HandleRQ SUCCESSFUL!");
+              System.out.println("READ request done!\n-------------");
 						}
 						// Write request
-                        else {   
-                            System.out.println("OP_RRQ <----");
+            else {   
+              System.out.println("Incoming WRITE request...");
 							requestedFile.insert(0, WRITEDIR);
 							HandleRQ(sendSocket,requestedFile.toString(),OP_WRQ);  
+              System.out.println("WRITE request done!\n--------------");
 						}
 						sendSocket.close();
-					} 
-					catch (SocketException e) {
-                        e.printStackTrace(); 
-                    }
+					} catch (SocketException e) {
+              e.printStackTrace(); 
+          }
 				}
 			}.start();
 		}
@@ -144,14 +147,15 @@ public class TFTPServer
     // Create datagram packet
     DatagramPacket in_packet = new DatagramPacket(buf, BUFSIZE);
 		// Receive packet
-	socket.receive(in_packet);	
+    socket.receive(in_packet);	
 		// Get client address and port from the packet
     port = in_packet.getPort();
     inet_addr = in_packet.getAddress();
     inet_socket_addr = new InetSocketAddress(inet_addr, port);
-	System.out.println("Returning from \"receiveFrom\"!");
+    //System.out.println("Returning from \"receiveFrom\"!");
     return inet_socket_addr;
 	}
+
 
 	/**
 	 * Parses the request in buf to retrieve the type of request and requestedFile
@@ -159,12 +163,13 @@ public class TFTPServer
 	 * @param buf (received request)
 	 * @param requestedFile (name of file to read/write)
 	 * @return opcode (request type: RRQ or WRQ)
-	 */
-  
-	private int ParseRQ(byte[] buf, StringBuffer requestedFile) 
-	{
+	 */ 
+	private int ParseRQ(byte[] buf, StringBuffer requestedFile) {
     ByteBuffer container = ByteBuffer.wrap(buf);
     short opcode = container.getShort();
+    System.out.println("Requested file --> "+requestedFile.toString());
+    System.out.println("OPCODE returned: "+opcode);
+
     return opcode;
 	}
   
@@ -179,24 +184,21 @@ public class TFTPServer
   
 	private void HandleRQ(DatagramSocket sendSocket, String requestedFile, int opcode) 
 	{		
-		if(opcode == OP_RRQ) {
-            System.out.println("--> send_DATA_receive_ACK");
-			boolean result = send_DATA_receive_ACK(sendSocket, requestedFile);
+		if (opcode == OP_RRQ) {
+            boolean result = send_DATA_receive_ACK(sendSocket, requestedFile);
             if (result == true) { 
-                System.out.println("datagram sent with no errors!");
+                System.out.println("Datagram sent with initial OPCODE: "+opcode);
             } else {
-                System.out.println("ERROR sending DATAGRAM!!!");
+                System.out.println("Error sending datagram with opcode: "+opcode);
             }
         }
 		else if (opcode == OP_WRQ) {
-            System.out.println("--> receive_DATA_send_ACK");
-			boolean result = receive_DATA_send_ACK(sendSocket, requestedFile);
+            boolean result = receive_DATA_send_ACK(sendSocket, requestedFile);
             if (result == true) { 
-                System.out.println("datagram sent with no errors!");
+                System.out.println("Datagram sent with initial OPCODE: "+opcode);
             } else {
-                System.out.println("ERROR sending DATAGRAM!!!");
+                System.out.println("Error sending datagram with opcode: "+opcode);
             }
-            
 		}
     else {
 			System.err.println("Invalid request. Sending an error packet.");
@@ -215,24 +217,28 @@ public class TFTPServer
       int pkg_length;
       byte[] pkg;
       FileInputStream file_input;
-      File file = new File(READDIR, requestedFile);
-      if (file.isFile() && file.canRead()) {  // Check if file is correctly created
-        // Create byte array that fit the message size
-        System.out.println("FILENAME: "+file.getName()+"\nFILE PATH: "+file.getAbsolutePath());
-        pkg_length = (int) file.length() + 4;  // Size of file
-        pkg = new byte[(int) pkg_length];
-        file_input = new FileInputStream(file);
-        file_input.read(pkg, 4, pkg_length);  // read the file
-        file_input.close();
-        // opcode 3 for DATA PACKET
-        pkg[opcode_offset] = OP_DAT;
-        pkg[block_offset] = 1;  // given that package size is < 511 bytes
-        DatagramPacket datagram = new DatagramPacket(pkg, pkg_length);
-        socket.send(datagram);
-        System.out.println("Datagram sent!");
-      }
+      //File file = new File(READDIR, requestedFile);
+      File file = new File(READDIR, "test.txt");
+      System.out.println("New file created!\n"+file.getPath()+"\nrequestedFile --> "+requestedFile);
+      // Create byte array that fit the message size
+      System.out.println("FILENAME: "+file.getName()+"\nFILE PATH: "+file.getPath());
+      pkg_length = (int) file.length();  // Size of file
+      pkg = new byte[pkg_length + 4];
+      System.out.println("pkg-len: "+pkg.length);
+      file_input = new FileInputStream(file);
+      //file_input.read(pkg, 0, pkg_length);  // read the file
+      file_input.read(pkg, 4, pkg_length);  // read the file
+      file_input.close();
+      // opcode 3 for DATA PACKET
+      pkg[0] = 3;
+      pkg[block_offset] = 1;  // given that package size is < 511 bytes
+      DatagramPacket datagram = new DatagramPacket(pkg, pkg.length, socket.getInetAddress(), socket.getPort());
+      System.out.println("=== DATAGRAM ===\n- addr: "+datagram.getAddress()+"\n- data: "+datagram.getData()+"\n- port: "+datagram.getPort());
+      socket.send(datagram);
+      System.out.println("Datagram sent!");
     } catch (Exception e) {
-
+      System.out.println("send_DATA_recieve_ACK ---> error found.. \n"+e);
+      return false;
     }
     return true;
   }
