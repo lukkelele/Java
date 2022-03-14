@@ -64,7 +64,6 @@ public class TFTPServer
 	private void start() throws SocketException 
 	{
 		buf = new byte[BUFSIZE];
-		
 		// Create socket
 		DatagramSocket socket= new DatagramSocket(null);
 		// Create local bind point 
@@ -82,8 +81,7 @@ public class TFTPServer
             break;
       }
 			// If clientAddress is null, an error occurred in receiveFrom()
-			if (clientAddress == null) 
-				break;
+			if (clientAddress == null) break;
 
 			final StringBuffer requestedFile = new StringBuffer();
 			final int reqtype = ParseRQ(buf, requestedFile);
@@ -102,9 +100,7 @@ public class TFTPServer
 						if (reqtype == OP_RRQ) {      
               System.out.println("Incoming READ request...");
 							HandleRQ(sendSocket, OP_RRQ);
-						}
-						// Write request
-            else {   
+						} else {   
               System.out.println("Incoming WRITE request...");
 							HandleRQ(sendSocket, OP_WRQ);  
 						}
@@ -187,33 +183,36 @@ public class TFTPServer
   }
 	
 
-  // IMPLEMENT
 
-  // Read and Write
+  /**
+   * Send data in buffer byte array to the client.
+   *
+   * @param socket is the socket connected to the client address
+   * @return true if the datagram is correctly sent and false otherwise
+   */
   private boolean send_DATA_receive_ACK(DatagramSocket socket) {
     try {      
-      FileInputStream file_input;
-      int filedata_length;
+      FileInputStream file_input;         // FileInputStream to read data
+      int filedata_length;                // the amount of bytes to be sent in datagram
       byte[] pkg = new byte[BUFSIZE];
       File file = new File(READDIR, file_name);
-      //System.out.println("NEW FILE: "+file.getAbsolutePath());
-      file_input = new FileInputStream(file);
+      file_input = new FileInputStream(file);   
       filedata_length = file_input.read(pkg, 4, DATA_SIZE) + 4; // Add 4 for the opcode and block bytes
       file_input.close();
       // opcode bytes
       pkg[0] = 0;   
       pkg[1] = 3;   // 3 = 0b101
       // block bytes
-      pkg[2] = 0; 
-      pkg[3] = 1; 
+      pkg[2] = 0;   
+      pkg[3] = 1;   // block = 1 because the file sent is <512 bytes
       // display_bytes(pkg); // DEBUGGING
       DatagramPacket datagram = new DatagramPacket(pkg, filedata_length, clientAddress);
       socket.send(datagram); // Send the datagram  
       show(datagram);        // Display datagram properties in terminal
-      return true;
+      return true;           // If the datagram is successfully sent, return true
     } catch (Exception e) {
       System.out.println(e);
-      return false;
+      return false;          // If the datagram cant be sent, return false
     }
   }
 
@@ -223,8 +222,7 @@ public class TFTPServer
   }
 
 
-  private void send_ERR(DatagramSocket socket) {
-  }
+  private void send_ERR(DatagramSocket socket) {  }
 
 
   void show(DatagramPacket datagram) {
@@ -235,8 +233,27 @@ public class TFTPServer
 
 
   /**
+   * Iterates the byte buf array and adds characters to a stringbuffer until a
+   * delimiter byte has been reached.
+   *
+   * @param i is the offset to start to index from
+   * @param end is the byte to stop adding characters to s
+   * @param s is the StringBuffer who holds the created string
+   * @return StringBuffer s
+   */
+  String get_filename(int i, byte end, StringBuffer s) {
+    while (buf[i] != end) {
+      s.append((char) buf[i++]);
+    } 
+    return s.toString();
+  }
+
+
+  /**
    * Displays all bytes in a byte array.
    * Used for debug purposes with the packet headers.
+   *
+   * @param pkg is the byte array that is to be printed to the terminal.
    */
   void display_bytes(byte[] pkg) {
     System.out.print("\n");
@@ -245,15 +262,6 @@ public class TFTPServer
     }
     System.out.print("\n");
   }
- 
-
-  String get_filename(int i, byte end, StringBuffer s) {
-    while (buf[i] != end) {
-      s.append((char) buf[i++]);
-    } 
-    return s.toString();
-  }
-
 
 }
 
