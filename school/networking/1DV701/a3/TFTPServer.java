@@ -21,7 +21,7 @@ public class TFTPServer
   public static final int TFTPPORT = 4970;
 	public static final int BUFSIZE = 516;
   public static final int DATA_SIZE = 512;
-	public static final String READDIR =  "/home/lukkelele/Code/java/school/networking/1DV701/a3/read/"; //custom address at your PC
+	public static final String READDIR =  "/home/lukas/Code/java/school/networking/1DV701/a3/read/"; //custom address at your PC
 	public static final String WRITEDIR = "/home/lukkelele/Code/java/school/networking/1DV701/a3/write/"; //custom address at your PC
 
 	// OP codes
@@ -230,7 +230,6 @@ public class TFTPServer
   void show(DatagramPacket datagram) {
       System.out.println("\n=== DATAGRAM ===\n- addr: "+datagram.getAddress()
           +"\n- port: "+datagram.getPort()+"\n- package length: "+datagram.getLength()
-          +"\n- ip: "+datagram.getAddress().toString()
           +"\n================\n");
   }
 
