@@ -22,21 +22,14 @@ public class TFTPServer
 	public static final int BUFSIZE = 516;
   public static final int DATA_SIZE = 512;
 	public static final String READDIR = "/home/lukkelele/Code/java/school/networking/1DV701/a3/read/"; //custom address at your PC
-	//public static final String WRITEDIR = "/home/lukkelele/Code/java/school/networking/1DV701/a3/write/"; //custom address at your PC
-	//public static final String READDIR =  "./read/"; //custom address at your PC
 	public static final String WRITEDIR = "./write/"; //custom address at your PC
+
 	// OP codes
 	public static final int OP_RRQ = 1;
 	public static final int OP_WRQ = 2;
 	public static final int OP_DAT = 3;
 	public static final int OP_ACK = 4;
 	public static final int OP_ERR = 5;
-
-  static final int opcode_offset = 0;
-  static final int block_offset = 2;
-  static final int msg_offset = 4;
-  static final int file_offset = 0;
-  static final int data_offset = 4;
 
   byte[] buf;
   int port;
@@ -110,13 +103,12 @@ public class TFTPServer
 						// Read request
 						if (reqtype == OP_RRQ) {      
               System.out.println("Incoming READ request...");
-							requestedFile.insert(0, READDIR);
-							HandleRQ(sendSocket, file_name, OP_RRQ);
+              System.out.println("requestedFile -> "+requestedFile.toString());
+							HandleRQ(sendSocket, requestedFile.toString(), OP_RRQ);
 						}
 						// Write request
             else {   
               System.out.println("Incoming WRITE request...");
-							requestedFile.insert(0, WRITEDIR);
 							HandleRQ(sendSocket,requestedFile.toString(),OP_WRQ);  
 						}
 						sendSocket.close();
@@ -160,6 +152,7 @@ public class TFTPServer
     ByteBuffer container = ByteBuffer.wrap(buf);
     short opcode = container.getShort();
     file_name = get_filename(1, (byte)0, requestedFile);
+    System.out.println("requested file: "+requestedFile.toString());
     return opcode;
 	}
   
@@ -203,21 +196,12 @@ public class TFTPServer
 
   // Read and Write
   private boolean send_DATA_receive_ACK(DatagramSocket socket, String requestedFile) {
-    try {
-      send_datapacket(socket, requestedFile);
-      return true;
-    } catch (Exception e) {
-      System.out.println("\n"+e);
-      return false;
-    }
-  }
-
-  private boolean send_datapacket(DatagramSocket socket, String requestedFile) {
     try {      
       FileInputStream file_input;
       int filedata_length, pkg_length;
       byte[] pkg = new byte[BUFSIZE];
-      File file = new File(READDIR, "RFC1350.txt");
+      File file = new File(READDIR, requestedFile);
+      System.out.println("NEW FILE: "+file.getAbsolutePath());
       file_input = new FileInputStream(file);
       filedata_length = file_input.read(pkg, 0, DATA_SIZE);
       file_input.close();
@@ -237,6 +221,7 @@ public class TFTPServer
       return false;
     }
   }
+
 
 	private boolean receive_DATA_send_ACK(DatagramSocket socket, String requestedFile) {
      
