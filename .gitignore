@@ -4,5 +4,6 @@
 #!*.java
 **/*.class 
 **/*.odt
+**/*.txt
 .directory
 minecraft_modding/*
