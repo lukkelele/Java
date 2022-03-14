@@ -39,8 +39,10 @@ public class TFTPServer
   static final int data_offset = 4;
 
   static InetSocketAddress clientAddress;
+  static InetAddress ip;
   byte[] buf;
   String file_name;
+  int port;
 
   //             RRQ/WRQ   packet
   //
@@ -69,7 +71,7 @@ public class TFTPServer
 
 	private void start() throws SocketException 
 	{
-		buf= new byte[BUFSIZE];
+		buf = new byte[BUFSIZE];
 		
 		// Create socket
 		DatagramSocket socket= new DatagramSocket(null);
@@ -146,7 +148,6 @@ public class TFTPServer
 	 * @return socketAddress (the socket address of the client)
 	 */
 	private InetSocketAddress receiveFrom(DatagramSocket socket, byte[] buf) throws IOException {
-    int port;
     InetSocketAddress inet_socket_addr = null;
     InetAddress inet_addr = null;
     // Create datagram packet
@@ -155,7 +156,7 @@ public class TFTPServer
     socket.receive(in_packet);	
 		// Get client address and port from the packet
     port = in_packet.getPort();
-    inet_addr = in_packet.getAddress();
+    ip = in_packet.getAddress();
     inet_socket_addr = new InetSocketAddress(inet_addr, port);
     //System.out.println("Returning from \"receiveFrom\"!");
     return inet_socket_addr;
@@ -218,15 +219,15 @@ public class TFTPServer
   // Read and Write
   private boolean send_DATA_receive_ACK(DatagramSocket socket, String requestedFile) {
     try {
-      int pkg_length;
-      byte[] pkg = new byte[DATA_SIZE+4];
       FileInputStream file_input;
-      File file = new File("./read/RFC1350.txt");
+      int pkg_length;
+      byte[] pkg = new byte[BUFSIZE];   // 516 bytes
+      File file = new File(READDIR, "RFC1350.txt");
       file_input = new FileInputStream(file);
-      file_input.read(pkg, 4, DATA_SIZE);  // read the file
+      pkg_length = file_input.read(pkg, 4, DATA_SIZE) + 4;  // Include the 4 bytes from the header
       file_input.close();
+      
       // Create byte array that fit the message size
-      pkg_length = (int) file.length();  // Size of file
       // opcode 3 for DATA PACKET
       pkg[0] = 3;
       pkg[2] = 1;  // given that package size is < 511 bytes
@@ -234,8 +235,10 @@ public class TFTPServer
       //  System.out.println(b);
       //}
       DatagramPacket datagram = new DatagramPacket(pkg, pkg_length, clientAddress);
-      System.out.println("=== DATAGRAM ===\n- addr: "+datagram.getAddress()+"\n- data: "+datagram.getData()+"\n- port: "+datagram.getPort()
-          +"\n- msg length: "+datagram.getLength()+"\n- ip: "+clientAddress.toString()+"\n================");
+      System.out.println("=== DATAGRAM ===\n- addr: "+datagram.getAddress()+"\n- data: "+datagram.getData()
+          +"\n- port: "+datagram.getPort()+"\n- msg length: "+datagram.getLength()
+          +"\n- ip: "+clientAddress.toString()
+          +"\n- file: "+file.getAbsolutePath()+"\n================\n");
       socket.send(datagram);
       System.out.println("Datagram sent!");
     } catch (Exception e) {
