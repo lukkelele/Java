@@ -67,13 +67,11 @@ public class TFTPServer
 		
 		// Create socket
 		DatagramSocket socket= new DatagramSocket(null);
-		
 		// Create local bind point 
 		SocketAddress localBindPoint= new InetSocketAddress(TFTPPORT);
 		socket.bind(localBindPoint);
 
 		System.out.printf("Listening at port %d for new requests\n", TFTPPORT);
-
 		// Loop to handle client requests 
 		while (true) {
 			try {
@@ -103,6 +101,7 @@ public class TFTPServer
 						// Read request
 						if (reqtype == OP_RRQ) {      
               System.out.println("Incoming READ request...");
+              
               System.out.println("requestedFile -> "+requestedFile.toString());
 							HandleRQ(sendSocket, requestedFile.toString(), OP_RRQ);
 						}
@@ -151,8 +150,8 @@ public class TFTPServer
 	private int ParseRQ(byte[] buf, StringBuffer requestedFile) {
     ByteBuffer container = ByteBuffer.wrap(buf);
     short opcode = container.getShort();
-    file_name = get_filename(1, (byte)0, requestedFile);
-    System.out.println("requested file: "+requestedFile.toString());
+    file_name = get_filename(2, (byte)0, requestedFile);
+    //System.out.println("requested file: "+file_name);
     return opcode;
 	}
   
@@ -200,7 +199,7 @@ public class TFTPServer
       FileInputStream file_input;
       int filedata_length, pkg_length;
       byte[] pkg = new byte[BUFSIZE];
-      File file = new File(READDIR, requestedFile);
+      File file = new File(READDIR, "RFC1350.txt");
       System.out.println("NEW FILE: "+file.getAbsolutePath());
       file_input = new FileInputStream(file);
       filedata_length = file_input.read(pkg, 0, DATA_SIZE);
