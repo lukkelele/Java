@@ -48,15 +48,18 @@ class Packet {
   boolean send_data(DatagramSocket socket, String file_name) throws IOException {
     try {
       FileInputStream file_input;
-      int msg_length, mode;
-      mode = "octet".length();
+      int filedata_length;
       pkg = new byte[BUFSIZE];
       File file = new File(READDIR, file_name);
       file_input = new FileInputStream(file);
-      pkg_length = file_input.read(pkg, 4, DATA_SIZE) + (2+1+mode+1); // header, and 0 terminator bytes
+      filedata_length = file_input.read(pkg, 4, DATA_SIZE);
       file_input.close();
-      
-
+      pkg[0] = (byte) 0; 
+      pkg[1] = (byte) 0; 
+      // block 
+      pkg[2] = (byte) 0; 
+      pkg[3] = (byte) 1; 
+      pkg_length = filedata_length + 4;
       DatagramPacket datagram = new DatagramPacket(pkg, pkg_length, clientAddress);
       socket.send(datagram);
       show(datagram);

@@ -220,32 +220,28 @@ public class TFTPServer
   private boolean send_DATA_receive_ACK(DatagramSocket socket, String requestedFile) {
     try {
       FileInputStream file_input;
-      int pkg_length;
-      byte[] pkg = new byte[BUFSIZE];   // 516 bytes
+      int filedata_length, pkg_length;
+      byte[] pkg = new byte[BUFSIZE];
       File file = new File(READDIR, "RFC1350.txt");
       file_input = new FileInputStream(file);
-      pkg_length = file_input.read(pkg, 4, DATA_SIZE) + 4;  // Include the 4 bytes from the header
+      filedata_length = file_input.read(pkg, 0, DATA_SIZE);
       file_input.close();
-      
-      // Create byte array that fit the message size
-      // opcode 3 for DATA PACKET
-      pkg[0] = 3;
-      pkg[2] = 1;  // given that package size is < 511 bytes
-      //for (byte b : pkg) {
-      //  System.out.println(b);
-      //}
+      pkg[0] = 0; 
+      pkg[1] = 3; 
+      // block 
+      pkg[2] = 0; 
+      pkg[3] = 1; 
+      pkg_length = filedata_length + 4;
+      display_bytes(pkg);
       DatagramPacket datagram = new DatagramPacket(pkg, pkg_length, clientAddress);
-      System.out.println("=== DATAGRAM ===\n- addr: "+datagram.getAddress()+"\n- data: "+datagram.getData()
-          +"\n- port: "+datagram.getPort()+"\n- msg length: "+datagram.getLength()
-          +"\n- ip: "+clientAddress.toString()
-          +"\n- file: "+file.getAbsolutePath()+"\n================\n");
       socket.send(datagram);
+      show(datagram);
       System.out.println("Datagram sent!");
+      return true;
     } catch (Exception e) {
       System.out.println("send_DATA_recieve_ACK ---> error found.. \n"+e);
       return false;
     }
-    return true;
   }
 
 
@@ -259,6 +255,21 @@ public class TFTPServer
 
   }
 
+
+  void show(DatagramPacket datagram) {
+      System.out.println("=== DATAGRAM ===\n- addr: "+datagram.getAddress()+"\n- data: "+datagram.getData()
+          +"\n- port: "+datagram.getPort()+"\n- msg length: "+datagram.getLength()
+          +"\n- ip: "+datagram.getAddress().toString()
+          +"\n- file: "+datagram.getData().toString()+"\n================\n");
+  }
+
+  void display_bytes(byte[] pkg) {
+    System.out.print("\n");
+    for (byte b : pkg) {
+      System.out.print(b);
+    }
+    System.out.print("\n");
+  }
 
 }
 
