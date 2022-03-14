@@ -219,6 +219,16 @@ public class TFTPServer
   // Read and Write
   private boolean send_DATA_receive_ACK(DatagramSocket socket, String requestedFile) {
     try {
+      send_datapacket(socket, requestedFile);
+      return true;
+    } catch (Exception e) {
+      System.out.println("\n"+e);
+      return false;
+    }
+  }
+
+  private boolean send_datapacket(DatagramSocket socket, String requestedFile) {
+    try {      
       FileInputStream file_input;
       int filedata_length, pkg_length;
       byte[] pkg = new byte[BUFSIZE];
@@ -232,18 +242,16 @@ public class TFTPServer
       pkg[2] = 0; 
       pkg[3] = 1; 
       pkg_length = filedata_length + 4;
-      display_bytes(pkg);
+      // display_bytes(pkg); FOR DEBUGGING
       DatagramPacket datagram = new DatagramPacket(pkg, pkg_length, clientAddress);
       socket.send(datagram);
       show(datagram);
-      System.out.println("Datagram sent!");
       return true;
     } catch (Exception e) {
-      System.out.println("send_DATA_recieve_ACK ---> error found.. \n"+e);
+      System.out.println(e);
       return false;
     }
   }
-
 
 	private boolean receive_DATA_send_ACK(DatagramSocket socket, String requestedFile) {
      
@@ -262,6 +270,7 @@ public class TFTPServer
           +"\n- ip: "+datagram.getAddress().toString()
           +"\n- file: "+datagram.getData().toString()+"\n================\n");
   }
+
 
   void display_bytes(byte[] pkg) {
     System.out.print("\n");
