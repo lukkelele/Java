@@ -38,11 +38,10 @@ public class TFTPServer
   static final int file_offset = 0;
   static final int data_offset = 4;
 
-  static InetSocketAddress clientAddress;
-  static InetAddress ip;
   byte[] buf;
-  String file_name;
   int port;
+  InetSocketAddress clientAddress;
+  String file_name;
 
   //             RRQ/WRQ   packet
   //
@@ -113,14 +112,12 @@ public class TFTPServer
               System.out.println("Incoming READ request...");
 							requestedFile.insert(0, READDIR);
 							HandleRQ(sendSocket, file_name, OP_RRQ);
-              System.out.println("READ request done!\n-------------");
 						}
 						// Write request
             else {   
               System.out.println("Incoming WRITE request...");
 							requestedFile.insert(0, WRITEDIR);
 							HandleRQ(sendSocket,requestedFile.toString(),OP_WRQ);  
-              System.out.println("WRITE request done!\n--------------");
 						}
 						sendSocket.close();
 					} catch (SocketException e) {
@@ -131,15 +128,6 @@ public class TFTPServer
 		}
 	}
 	
-  
-  String get_filename(int i, byte end, StringBuffer s) {
-    while (buf[i] != end) {
-      s.append((char) buf[i++]);
-    } 
-    System.out.println("filename ------> "+s.toString());
-    return s.toString();
-  }
-
 
 	/**
 	 * Reads the first block of data, i.e., the request for an action (read or write).
@@ -156,9 +144,7 @@ public class TFTPServer
     socket.receive(in_packet);	
 		// Get client address and port from the packet
     port = in_packet.getPort();
-    ip = in_packet.getAddress();
     inet_socket_addr = new InetSocketAddress(inet_addr, port);
-    //System.out.println("Returning from \"receiveFrom\"!");
     return inet_socket_addr;
 	}
 
@@ -173,7 +159,6 @@ public class TFTPServer
 	private int ParseRQ(byte[] buf, StringBuffer requestedFile) {
     ByteBuffer container = ByteBuffer.wrap(buf);
     short opcode = container.getShort();
-    System.out.println("OPCODE returned: "+opcode);
     file_name = get_filename(1, (byte)0, requestedFile);
     return opcode;
 	}
@@ -192,7 +177,7 @@ public class TFTPServer
 		if (opcode == OP_RRQ) {
             boolean result = send_DATA_receive_ACK(sendSocket, requestedFile);
             if (result == true) { 
-                System.out.println("Datagram sent with initial OPCODE: "+opcode);
+                System.out.println("Datagram sent!");
             } else {
                 System.out.println("Error sending datagram with opcode: "+opcode);
             }
@@ -200,7 +185,7 @@ public class TFTPServer
 		else if (opcode == OP_WRQ) {
             boolean result = receive_DATA_send_ACK(sendSocket, requestedFile);
             if (result == true) { 
-                System.out.println("Datagram sent with initial OPCODE: "+opcode);
+                System.out.println("Datagram sent!");
             } else {
                 System.out.println("Error sending datagram with opcode: "+opcode);
             }
@@ -268,7 +253,7 @@ public class TFTPServer
       System.out.println("=== DATAGRAM ===\n- addr: "+datagram.getAddress()+"\n- data: "+datagram.getData()
           +"\n- port: "+datagram.getPort()+"\n- msg length: "+datagram.getLength()
           +"\n- ip: "+datagram.getAddress().toString()
-          +"\n- file: "+datagram.getData().toString()+"\n================\n");
+          +"\n================\n");
   }
 
 
@@ -279,6 +264,15 @@ public class TFTPServer
     }
     System.out.print("\n");
   }
+ 
+
+  String get_filename(int i, byte end, StringBuffer s) {
+    while (buf[i] != end) {
+      s.append((char) buf[i++]);
+    } 
+    return s.toString();
+  }
+
 
 }
 
