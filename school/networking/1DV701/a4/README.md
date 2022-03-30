@@ -1,4 +1,4 @@
 ## assignment 4 - topology
 
-/24 subnets => Mask 255.255.255.224 , 30 possible hosts  
-/30 subnets in the backbone
+/30 subnets in the backbone --> 64 subnets => 2 Hosts/Subnet  
+/24 subnets in Network A and B --> 1 subnet => 254 Hosts/Subnet
