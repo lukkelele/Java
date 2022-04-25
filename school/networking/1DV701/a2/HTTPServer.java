@@ -28,7 +28,8 @@ public class HTTPServer implements Runnable {
   private static final String FOUND = "302.html";
   private static final String INTERNAL_SERVER_ERROR = "500.html";
   private static String path = "";
-  private static String web_dir = "/home/lukkelele/Code/java/school/networking/1DV701/a2_webserver/";     // "absolute path" used to remove possibility of traversing directories 
+ //private static String web_dir = "/home/lukkelele/Code/java/school/networking/1DV701/a2_webserver/";     // "absolute path" used to remove possibility of traversing directories 
+  private static String web_dir = "./";     // "absolute path" used to remove possibility of traversing directories
 
   private static final String redirect_url = "./public/redirect.html";      // Hardcoded for 302 error message
 
