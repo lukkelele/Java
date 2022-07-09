@@ -22,13 +22,13 @@ public class HTTPServer implements Runnable {
   private static Socket connection;
   private static int port;
   private static int default_port = 8888;
-  private static final String default_path = "./public";
+  private static final String default_path = "public";
   private static final String DEFAULT = "index.html";
   private static final String FILE_NOT_FOUND = "404.html";
   private static final String FOUND = "302.html";
   private static final String INTERNAL_SERVER_ERROR = "500.html";
   private static String path = "";
-  private static final String redirect_url = "./public/redirect.html";      // Hardcoded for 302 error message
+  private static final String redirect_url = "public/redirect.html";      // Hardcoded for 302 error message
 
 
   public HTTPServer(Socket s) {
@@ -245,19 +245,21 @@ public class HTTPServer implements Runnable {
 
   private static String checkPathArg(String path) {
     try {
-      System.out.println("Path argument INVALID!");
       Integer.parseInt(path);      // If error occurs, the string is NOT a number, hence being VALID
-      path = default_path;
       System.out.println("Path is a number... Setting default path");
+      path = default_path;
     } catch (NumberFormatException e) {
-      // VALID PATH, DO NOTHING
+      // If the try fails above, enter here
       if (path.contains("..")) {  // 'cd ..' will go back one directory
         System.out.println("DIRECTORY ACCESS RESTRICTED!\nFound '..' in passed path parameter\nPATH SET TO DEFAULT.");
         path = default_path;
       }
-      System.out.println("Default path set ==> "+path+"\n");
     }  
-    //path = path.replace("..", "");   // Remove ALL dots
+    if (path.startsWith("/")) {
+      path = "." + path;
+    } else {
+      path = "./" + path; 
+    }
     return path;
   }
 
