@@ -24,7 +24,7 @@ public class HTTPServer implements Runnable {
   private static int default_port = 8888;
   private static final String default_path = "public";
   private static final String DEFAULT = "index.html";
-  private static final String FILE_NOT_FOUND = "404.html";
+  private static final String FILE_NOT_FOUND = "";
   private static final String FOUND = "302.html";
   private static final String INTERNAL_SERVER_ERROR = "500.html";
   private static String path = "";
@@ -34,7 +34,6 @@ public class HTTPServer implements Runnable {
   public HTTPServer(Socket s) {
     connection = s;                   
   }
-
 
   public static void main(String[] args) throws RuntimeException {
       
@@ -63,19 +62,17 @@ public class HTTPServer implements Runnable {
         }
       }
 
-      Scanner user = new Scanner(System.in);
-      int checkedPort = checkPortArg(args[0]); 
-      String checkedPath = checkPathArg(args[1]);
+      port = checkPortArg(args[0]); 
+      path = checkPathArg(args[1]);
       ServerSocket serverConnection = null;
         try {   
             // This infinite loop creates new threads if multiple connections are queueing at the chosen port
             serverConnection = new ServerSocket(port);     // Create socket for the server connection
-            System.out.println("\n  ==== SERVER ====\n  PATH: "+checkedPath+"\n  PORT: "+checkedPort+"\n  ================\n\nlistening...");
+            System.out.println("\n  ==== SERVER ====\n  PATH: "+path+"\n  PORT: "+port+"\n  ================\n\nlistening...");
             while (true) {
                 HTTPServer server = new HTTPServer(serverConnection.accept());       // Create server with the socket that is listening for a connection
                 Thread server_thread = new Thread(server);                  // Add the newly created HTTPServer object to a runnable thread
                 server_thread.start();       // thread.start() to run the server on a separate thread to be able to manage it
-      
             }
         }    
              catch (IOException b) {
@@ -83,10 +80,7 @@ public class HTTPServer implements Runnable {
                 try {
                   PrintWriter output = new PrintWriter(connection.getOutputStream());          // true for enabling autoflush
                   send_INTERNAL_SERVER_ERROR(output);
-                 
-                } catch (IOException c) {
-                  System.out.println("SEVERE ISSUES ACCOMPLISHED"); 
-                }
+                } catch (IOException c) { c.printStackTrace(); }
              }
   } 
 
@@ -110,7 +104,6 @@ public class HTTPServer implements Runnable {
       String[] header = s.split(" ");              // Split header in to three pieces
       method = header[0].trim().toUpperCase();     // Trim to remove potential whitespaces. Could use method.matches instead as well
       file_request = header[1].toLowerCase();      // keep file requests to lowercase since it is the standard
-
       if (file_request.trim().equals("http")) {    // If file request is "empty", for initial responses etc.
         System.out.println("File request empty.. setting default");
         file_request = DEFAULT;
@@ -124,10 +117,6 @@ public class HTTPServer implements Runnable {
         file = new File(path, FOUND);
       }
 
-      // POST
-      if (method.equals("POST")) {
-      }
-
       // GET
       if (method.equals("GET")) {
        if (file.isDirectory()) {  // if file requested is a directory, fetch the index.html file inside that directory
@@ -137,14 +126,15 @@ public class HTTPServer implements Runnable {
             }
           }
         } else {
-        send_data(out, output, file);
+          send_data(out, output, file);
         }
       }
     } catch (IOException e) {
       try {
+        System.out.println("FILE NOT FOUND");
         send_FILE_NOT_FOUND(output, file_request);
-      } catch (IOException n) {
-            System.out.println("--- FILE NOT FOUND EXCEPTION - ERROR #2 ==> "+n);
+      } catch (Exception n) {
+        send_INTERNAL_SERVER_ERROR(output);
       }
     }
   }
@@ -205,7 +195,7 @@ public class HTTPServer implements Runnable {
   }
 
 
-  private static void send_INTERNAL_SERVER_ERROR(PrintWriter output) throws IOException {
+  private static void send_INTERNAL_SERVER_ERROR(PrintWriter output) {
     File file = new File(path, INTERNAL_SERVER_ERROR);
     int len_file = (int) file.length();
     output.println("HTTP/1.1 500 Internal Server Error");
