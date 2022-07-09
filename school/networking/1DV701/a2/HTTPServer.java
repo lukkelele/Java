@@ -24,7 +24,7 @@ public class HTTPServer implements Runnable {
   private static int default_port = 8888;
   private static final String default_path = "public";
   private static final String DEFAULT = "index.html";
-  private static final String FILE_NOT_FOUND = "";
+  private static final String FILE_NOT_FOUND = "404.html";
   private static final String FOUND = "302.html";
   private static final String INTERNAL_SERVER_ERROR = "500.html";
   private static String path = "";

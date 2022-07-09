@@ -144,6 +144,6 @@ requestPageNotOK(f'a/fail{fe}', 'Page in dir fail', 404)
 requestPageNotOK('a/b/c/d', 'Dir no index fail', 404)
 requestPageNotOK('a/b/c/noimage.png', 'Image fail', 404)
 
-# IMPLEMENTED BY ME (lg222xf)
 
-requestPageOK(f'redirect{fe}', 'Redirected page for error code 302')
+#  IMPLEMENTED BY ME (lg222xf)
+#requestPageOK(f'redirect{fe}', 'Redirected page for error code 302')
