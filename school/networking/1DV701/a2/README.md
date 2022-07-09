@@ -15,7 +15,5 @@ With the provided error handling, server starts can look like:
 If a port is already in use then a bindexception will get thrown and the user is told to try another port.\\
 
 ---
-
 As far as I've tested, there are no issues with execution.\\
 It is not possible to traverse the directory by setting a relative path such as _'../../../../../../'_ or just _'/etc'_.\\
-The command line argument that specifies the path is itself relative, but to ensure that the 

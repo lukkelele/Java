@@ -22,15 +22,12 @@ public class HTTPServer implements Runnable {
   private static Socket connection;
   private static int port;
   private static int default_port = 8888;
-  private static final String default_path = "public";
+  private static final String default_path = "./public";
   private static final String DEFAULT = "index.html";
   private static final String FILE_NOT_FOUND = "404.html";
   private static final String FOUND = "302.html";
   private static final String INTERNAL_SERVER_ERROR = "500.html";
   private static String path = "";
- //private static String web_dir = "/home/lukkelele/Code/java/school/networking/1DV701/a2_webserver/";     // "absolute path" used to remove possibility of traversing directories 
-  private static String web_dir = "./";     // "absolute path" used to remove possibility of traversing directories
-
   private static final String redirect_url = "./public/redirect.html";      // Hardcoded for 302 error message
 
 
@@ -51,7 +48,7 @@ public class HTTPServer implements Runnable {
         } else {
         System.out.println("\nTWO commands are to be passed!\n");
         // if arguments provided are more than 0 but not 2, set default values
-        if (parseInt(args[0]) == true) {  // if the first argument is a number, it is considered to be a port
+        if (parseInt(args[0]) == true && amount_args == 1) {  // if the first argument is a number, it is considered to be a port
           port = Integer.parseInt(args[0]);
           path = default_path;            
           System.out.println("No path was provided, default path set.");
@@ -67,14 +64,13 @@ public class HTTPServer implements Runnable {
       }
 
       Scanner user = new Scanner(System.in);
-      path = checkPathArg(args[1]);
-      port = checkPortArg(args[0]); 
+      int checkedPort = checkPortArg(args[0]); 
+      String checkedPath = checkPathArg(args[1]);
       ServerSocket serverConnection = null;
         try {   
             // This infinite loop creates new threads if multiple connections are queueing at the chosen port
             serverConnection = new ServerSocket(port);     // Create socket for the server connection
-            String rel_path = path.replace(web_dir, ""); 
-            System.out.println("\n  ==== SERVER ====\n  PATH: "+rel_path+"\n  PORT: "+port+"\n  ================\n\nlistening...");
+            System.out.println("\n  ==== SERVER ====\n  PATH: "+checkedPath+"\n  PORT: "+checkedPort+"\n  ================\n\nlistening...");
             while (true) {
                 HTTPServer server = new HTTPServer(serverConnection.accept());       // Create server with the socket that is listening for a connection
                 Thread server_thread = new Thread(server);                  // Add the newly created HTTPServer object to a runnable thread
@@ -236,7 +232,6 @@ public class HTTPServer implements Runnable {
     }
   }
 
-
   private static int checkPortArg(String arg) {
     try {
       int p = Integer.parseInt(arg);
@@ -248,47 +243,28 @@ public class HTTPServer implements Runnable {
     }
   }
 
-
   private static String checkPathArg(String path) {
-    String s = "";
     try {
-      Integer.parseInt(path);      // If error occurs, the string is NOT a number, hence being VALID
       System.out.println("Path argument INVALID!");
-      return path = default_path;
+      Integer.parseInt(path);      // If error occurs, the string is NOT a number, hence being VALID
+      path = default_path;
+      System.out.println("Path is a number... Setting default path");
     } catch (NumberFormatException e) {
       // VALID PATH, DO NOTHING
-    }  
-    if (path.startsWith("..")) {  // 'cd ..' will go back one directory
-      System.out.println("DIRECTORY ACCESS RESTRICTED!\nPATH SET TO DEFAULT.");
-      path = default_path;
-    }
-    path = path.replace(".", "");   // Remove ALL dots
-    File dir = new File(web_dir, path); // web_dir provides a structure to prevent directory traversals
-
-    if (dir.isDirectory()) {
-      String[] path_split = path.split("/");
-      int len_pathsplit = path_split.length;
-      // Cleans up provided paths with multiple sideslashes and dots
-      for (int k = 0 ; k < len_pathsplit ; k++) {
-        if (!path_split[k].isEmpty()) s += path_split[k] + "/";     // if character at index k is empty, do NOT add a '/'
+      if (path.contains("..")) {  // 'cd ..' will go back one directory
+        System.out.println("DIRECTORY ACCESS RESTRICTED!\nFound '..' in passed path parameter\nPATH SET TO DEFAULT.");
+        path = default_path;
       }
-      path = web_dir + path + "/";
-      return s;
-    } else {
-      System.out.println("No relative path found going by "+path+".");
-      System.out.println("To prevent directory traversals, the default value will be set since the provided relative path is illegal.");
-      path = web_dir + default_path + "/";      // Default path is set
-      return path;
-    }
-
+      System.out.println("Default path set ==> "+path+"\n");
+    }  
+    //path = path.replace("..", "");   // Remove ALL dots
+    return path;
   }
-
 
   // Method to return new output stream, is not necessary but it makes the code a bit easier to read
   BufferedOutputStream getSocketOutput() throws IOException {
     return new BufferedOutputStream(connection.getOutputStream());
   }
-
 
   // Method to return new input stream, is not necessary but it makes the code a bit easier to read
   BufferedReader getSocketInput() throws IOException {
