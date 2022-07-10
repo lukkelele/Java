@@ -1,4 +1,4 @@
-package ItemLendingSystem;
+package ItemLendingSystem.Model;
 
 import java.util.Date;
 

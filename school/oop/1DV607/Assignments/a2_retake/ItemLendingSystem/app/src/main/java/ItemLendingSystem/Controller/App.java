@@ -1,5 +1,6 @@
-package ItemLendingSystem;
+package ItemLendingSystem.Controller;
 
+import ItemLendingSystem.Model.Member;
 
 public class App {
 

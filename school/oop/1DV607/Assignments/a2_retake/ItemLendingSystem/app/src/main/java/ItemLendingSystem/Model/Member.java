@@ -1,4 +1,4 @@
-package ItemLendingSystem;
+package ItemLendingSystem.Model;
 
 public class Member {
    

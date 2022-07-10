@@ -4,6 +4,9 @@
 package ItemLendingSystem;
 
 import org.junit.Test;
+
+import ItemLendingSystem.Model.Member;
+
 import static org.junit.Assert.*;
 
 import org.junit.Assert;
