@@ -8,4 +8,4 @@
  */
 
 rootProject.name = 'ItemLendingSystem'
-include('app')
+include('src')
