@@ -17,7 +17,8 @@ public class Item {
     private String desc;
     private Date manufactured;
     private int dayCost;
-    
+    private Contract contract;
+
     protected Item(String name, String desc, Date manufactured, int dayCost) {
         this.name = name;
         this.desc = desc;
@@ -26,4 +27,6 @@ public class Item {
     }
     
     protected Item() {}
+    
+
 }

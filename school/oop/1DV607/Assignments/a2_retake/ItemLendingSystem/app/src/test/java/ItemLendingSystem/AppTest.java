@@ -6,9 +6,13 @@ package ItemLendingSystem;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
+import org.junit.Assert;
+
 public class AppTest {
-    @Test public void appHasAGreeting() {
-        App classUnderTest = new App();
-        assertNotNull("app should have a greeting", classUnderTest.getGreeting());
+   
+    /* Check to see if the ID length is 6 */
+    @Test public void checkIdLength() {
+        Member m = new Member("Lukas", "Gunnarsson", "0707123123", "lukas@gmail.com");
+        assert (m.getId().length() == 6);
     }
 }

@@ -2,11 +2,11 @@ package ItemLendingSystem;
 
 
 public class App {
-    public String getGreeting() {
-        return "Hello World!";
-    }
 
     public static void main(String[] args) {
-        System.out.println(new App().getGreeting());
+        
+        Member m = new Member("Lukas", "Gunnarsson", "0707123123", "lukas@gmail.com");
+        System.out.println(m);
+
     }
 }
