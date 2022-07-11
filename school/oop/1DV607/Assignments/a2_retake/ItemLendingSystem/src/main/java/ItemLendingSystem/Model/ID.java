@@ -5,6 +5,7 @@ import java.util.UUID;
 public class ID {
     
     private String id;
+    private int creationDate;
 
     public ID(int size) {
         this.id = this.generateId(size);
@@ -21,7 +22,15 @@ public class ID {
     }
 
     public String getId() {
-        return id;
+        return this.id;
+    }
+
+    public void setCreationDate(int day) {
+        this.creationDate = day;
+    }
+
+    public int getCreationDate() {
+        return this.creationDate;
     }
 
 }

@@ -1,36 +1,35 @@
 package ItemLendingSystem.Model;
 
-import java.util.Date;
 
-public class Contract {
+public class Contract implements Observer {
 
-    private Date startDate;
-    private Date terminationDate;
+    private int startDate;
+    private int terminationDate;
     private Member owner;
     private Member lender;
     private Item item;
 
-    protected Contract(Date start, Date termination, Member owner, Member lender, Item item) {
-        this.startDate = start;
+    protected Contract(int startDate, int termination, Member owner, Member lender, Item item) {
+        this.startDate = startDate;
         this.terminationDate = termination;
         this.owner = owner;
         this.lender = lender;
         this.item = item;
     }
 
-    protected void setStartDate(Date startDate) {
+    protected void setStartDate(int startDate) {
         this.startDate = startDate;
     }
 
-    public Date getStartDate() {
+    public int getStartDate() {
         return startDate;
     }
 
-    protected void setTerminationDate(Date terminationDate) {
+    protected void setTerminationDate(int terminationDate) {
         this.terminationDate = terminationDate;
     }
 
-    public Date getTerminationDate() {
+    public int getTerminationDate() {
         return terminationDate;
     }
     
@@ -58,6 +57,13 @@ public class Contract {
         return item;
     }
 
+    @Override
+    public int update(int days) {
+        // NOTIFY BANK FOR TRANSFER
+        return this.terminationDate;
+    }
 
+    @Override
+    public void reset() {}
 
 }
