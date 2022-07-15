@@ -1,7 +1,5 @@
-### !! Outdated, new notes in design.md !!
 
-# Assignment 2, CRUD system
-#### Group: Lukas Gunnarsson, Datateknik
+# CRUD system
 #### Tools: Vim, GenMyModel, Lucidchart, Visual Studio Code
 ---
 ## The app

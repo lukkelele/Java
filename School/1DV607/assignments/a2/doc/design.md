@@ -1,6 +1,5 @@
 
-## Boatclub OO-design
-### Updated version, try 1
+# Boatclub OO-design
 
 ## Console 
 (1) equals **YES**  
