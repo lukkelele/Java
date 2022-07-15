@@ -1,6 +1,4 @@
-# BlackJack Dice Game
-Author: Lukas Gunnarsson, datateknik
-
+# Design
 
 ### Updated Class Diagram
 
@@ -12,7 +10,7 @@ Author: Lukas Gunnarsson, datateknik
 ![Stand Sequence diagram showcasing Game calling stand() method](img/stand_seq.jpg)
 
 ---
-## Requirement 4, remove the bad hidden dependency.
+## Changes
 
 I changed the App and Player classes a bit, removing the extra View dependency from App by creating a ConsoleUI class that behaves as an factory for UI instances.  
 The requirement stated *"play, hit, stand, quit"* which involved the UI getting input and returning it to the controller was the thing to focus on.   
