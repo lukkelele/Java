@@ -6,9 +6,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.concurrent.TimeUnit;
 
 
-public class testpipe {
-// Group 25: Pierre Oskarsson, Johan Gustafsson, Lukas Gunnarsson
-// Course: 1DV512
+public class TestPipe {
 
   public String getTimestamp() {
     // time formating

@@ -11,7 +11,7 @@ public class Pipeline {
 
   public static void main(String[] args) {
     
-    String[] cmd = ""; // Process creator -- Pseudocode
+    String[] cmd = ""; // Process creator
     ProcessBuilder pb = new ProcessBuilder(args);
     
     Process parent = pb.start();
@@ -25,15 +25,7 @@ public class Pipeline {
     // Communicate 
     //
 
-    while (true) {
-
-    
-
-
-    }
-
-
-
+    while (true) { }
 
   }
 

@@ -18,9 +18,8 @@ public class TFTPServer
   public static final int TFTPPORT = 4970;
 	public static final int BUFSIZE = 516;
   public static final int DATA_SIZE = 512;
-  //public static final String READDIR =  "/home/lukas/Code/java/school/networking/1DV701/a3/read/"; //custom address at your PC
-	public static final String READDIR =  "./read/"; //custom address at your PC
-	public static final String WRITEDIR = "./write/"; //custom address at your PC
+	public static final String READDIR =  "./read/";
+	public static final String WRITEDIR = "./write/";
 
 	// OP codes
 	public static final int OP_RRQ = 1;
@@ -93,20 +92,20 @@ public class TFTPServer
 						DatagramSocket sendSocket= new DatagramSocket(0);
 						// Connect to client
 						sendSocket.connect(clientAddress);						
-            System.out.println("Request: "+reqtype
+                        System.out.println("Request: "+reqtype
                               +"\nHost: "+clientAddress.getAddress()
                               +"\nPort: "+clientAddress.getPort()); 
 						// Read request
 						if (reqtype == OP_RRQ) {      
-              System.out.println("Incoming READ request...");
+                            System.out.println("Incoming READ request...");
 							HandleRQ(sendSocket, OP_RRQ);
 						} else {   
-              System.out.println("Incoming WRITE request...");
+                            System.out.println("Incoming WRITE request...");
 							HandleRQ(sendSocket, OP_WRQ);  
 						}
 						sendSocket.close();
 					} catch (SocketException e) {
-              e.printStackTrace(); 
+                        e.printStackTrace();
           }
 				}
 			}.start();
@@ -208,7 +207,7 @@ public class TFTPServer
     }
   }
 
-	private boolean receive_DATA_send_ACK(DatagramSocket socket) { return true; }
+  private boolean receive_DATA_send_ACK(DatagramSocket socket) { return true; }
 
   private void send_ERR(DatagramSocket socket) {  }
 

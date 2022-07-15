@@ -10,6 +10,8 @@ import java.io.Flushable;
 
 public class Task {
 
+    String path = "";
+
 	public String getTimestamp() {
     // time formating
     LocalTime currentTime = LocalTime.now();
@@ -22,8 +24,8 @@ public class Task {
 
     int iterations = 10000;         /* how many loops */
     int totalIterations = 500;
-    int sleep = 10;            /* in milliseconds */
-    String path = "kaffe/";
+    int sleep = 10;                 /* in milliseconds */
+
 
 		try {
 			Task t = new Task(); 

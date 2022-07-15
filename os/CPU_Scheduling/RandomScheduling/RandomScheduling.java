@@ -2,13 +2,6 @@ import java.util.Random;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-/*
- * File:	RandomScheduling.java
- * Course: 	20HT - Operating Systems - 1DV512
- * Author: 	Lukas Gunnarsson, lg222xf@student.lnu.se
- * Date: 	November 2020
- */
-
 
 public class RandomScheduling {       
 
@@ -235,9 +228,6 @@ public class RandomScheduling {
   }
 
 
-  // ===========================
-
-  // MAIN METHOD
 
 	public static void main(String args[]) throws InterruptedException {
 
