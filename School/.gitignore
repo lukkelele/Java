@@ -1,0 +1,8 @@
+# ignore list
+
+examples
+Templates
+*.pdf
+*.zip
+**/*.zip
+**/*.pdf
