@@ -1,7 +1,5 @@
 #
 
-# !! OUTDATED !!
-## was made for getting a grasp of the task  
 
 # Initial thoughts
 The structure of the yacht club is in chaos as a whole.
@@ -48,9 +46,6 @@ It is very important that the berths that are no longer assigned to a member (if
 Members with multiple boats should be something that the secretary is aware of, and this information should all be contained within each member and not with each boat individually.
 
 A registry that contains all members necessary information is a solution to this problem. If a member has multiple boats the secretary will be able to see this by checking the name of the member.
-
-
-
 
 
 

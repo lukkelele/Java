@@ -1,5 +1,4 @@
 
-Author: *Lukas Gunnarsson, Datateknik*  
 Tools used: Vim, GenMyModel
 
 ---
