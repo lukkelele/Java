@@ -66,4 +66,11 @@ public class Contract implements Observer {
     @Override
     public void reset() {}
 
+
+    public boolean dailyPayment(Bank bank) {
+        int dailyCost = this.item.getDayCost();
+        boolean transferSuccess = bank.transfer(this.owner, this.lender, dailyCost); 
+        return transferSuccess;
+    }
+
 }

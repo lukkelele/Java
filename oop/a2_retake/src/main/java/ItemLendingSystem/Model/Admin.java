@@ -5,9 +5,11 @@ import java.util.ArrayList;
 public class Admin extends Person {
     
     private ArrayList<Member> members;
+    private Bank bank;
 
     public Admin() {
         this.members = new ArrayList<Member>();
+        this.bank = new Bank();
     }
 
     public Admin(String firstName, String lastName, String phone, String email) {
@@ -16,6 +18,7 @@ public class Admin extends Person {
         this.phone = phone;
         this.email = email;
         this.members = new ArrayList<Member>();
+        this.bank = new Bank();
     }
 
     public Member createNewMember(String firstName, String lastName, String phone, String email) {
@@ -42,6 +45,10 @@ public class Admin extends Person {
             return true;
         }
         return false;
+    }
+
+    public boolean payLoan(Contract contract) {
+        return contract.dailyPayment(this.bank);
     }
 
     
