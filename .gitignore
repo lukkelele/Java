@@ -2,6 +2,7 @@
 # Object classes
 
 #!*.java
+**/*.gitconfig
 **/*.class 
 **/*.odt
 **/*.txt
