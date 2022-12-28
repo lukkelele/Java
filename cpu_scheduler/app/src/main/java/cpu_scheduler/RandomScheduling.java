@@ -43,7 +43,6 @@ public class RandomScheduling {
 		
 		// ... add further fields and methods, if necessary
 	}
-		
 	// Random number generator that must be used for the simulation
 	Random rng;
 
@@ -55,14 +54,68 @@ public class RandomScheduling {
 	
 	public void reset() {
 		// TODO - remove any information from the previous simulation, if necessary
+        queue = new ArrayList<ScheduledProcess>();
+        finishedProcesses = new ArrayList<ScheduledProcess>();
+        queue.clear();
+        finishedProcesses.clear();
+        System.out.println("Cleared queue and finishedProcesses\n" 
+        + "Queue size: " + queue.size() + "\n"
+        + "finishedProcesses size: " + finishedProcesses.size() + "\n");
 	}
+
+    ScheduledProcess getProcess() {
+        int rand = rng.nextInt(queue.size());
+        ScheduledProcess p = queue.get(rand);
+        // System.out.println("rng.nextInt(queue.size()) => " + rand);
+        return p;
+    }
 	
-	public void runNewSimulation(final boolean isPreemptive, final int timeQuantum,
+	public void runNewSimulation(final boolean isPreemptive,
+        final int timeQuantum,
 	    final int numProcesses,
-		final int minBurstTime, final int maxBurstTime,
-		final int maxArrivalsPerTick, final double probArrival) {
+		final int minBurstTime,
+        final int maxBurstTime,
+		final int maxArrivalsPerTick,
+        final double probArrival) {
 		reset();
-		
+
+        System.out.println("Creating new processes...");
+        for (int k=0 ; k < numProcesses ; k++) {
+
+            int generatedBurst = rng.nextInt((maxBurstTime - minBurstTime)) + minBurstTime;
+            ScheduledProcess p = new ScheduledProcess(k, generatedBurst, k);
+            queue.add(p);
+            System.out.println("- id: " + k + "\n- burst: " + generatedBurst + "\n-------------");
+        }
+        System.out.println("New processes created!\n");
+
+        if (!isPreemptive) {
+            int ticks = 0;
+            while (queue.size() > 0) {
+                
+                double rand = rng.nextDouble();
+                System.out.println("rand = " + rand);
+
+                if (rand <= probArrival) {
+                    int id = queue.size() + finishedProcesses.size();
+                    int generatedBurst = rng.nextInt((maxBurstTime - minBurstTime)) + minBurstTime;
+                    ScheduledProcess newProcess = new ScheduledProcess(id, generatedBurst, ticks);
+                    System.out.println("New process created!\nid: " + id + "\nburst: " + generatedBurst + "\n-------");
+                    queue.add(newProcess);
+                }
+
+                ScheduledProcess p = getProcess();
+                p.totalWaitingTime = ticks;
+                while (p.allocatedCpuTime < p.burstTime) {
+                    p.allocatedCpuTime++;
+                    ticks++;
+                }
+                System.out.println("Process " + p.processId + " is done executing!");
+                finishedProcesses.add(p);
+                queue.remove(p);
+            }
+        }
+
 		// TODO:
 		// 1. Run a simulation as a loop, with one iteration considered as one unit of time (tick)
 		// 2. The simulation should involve the provided number of processes "numProcesses"
@@ -116,16 +169,14 @@ public class RandomScheduling {
 		RandomScheduling scheduler = new RandomScheduling(rngSeed);
 		
 		final int numSimulations = 5;
-		
 		final int numProcesses = 10;
 		final int minBurstTime = 2;
 		final int maxBurstTime = 10;
 		final int maxArrivalsPerTick = 2;
 		final double probArrival = 0.75;
-		
 		final int timeQuantum = 2;
 
-		boolean[] preemptionOptions = {false, true};
+		boolean[] preemptionOptions = {false}; //, true};
 
 		for (boolean isPreemptive: preemptionOptions) {
 

@@ -11,7 +11,7 @@ import java.util.Random;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-public class RandomScheduling {
+public class oldRandomScheduling {
 
     Random rng;
     int totalProcesses;
@@ -141,7 +141,7 @@ public class RandomScheduling {
         return rng.nextInt((max - min)) + min;
     }
 
-    public RandomScheduling(long rngSeed) {
+    public oldRandomScheduling(long rngSeed) {
 		this.rng = new Random(rngSeed);
 	}
 
@@ -237,7 +237,7 @@ public class RandomScheduling {
         ArrayList<int[]> results = new ArrayList<int[]>();
 
         final long rngSeed = 990520;
-        RandomScheduling scheduler = new RandomScheduling(rngSeed);
+        oldRandomScheduling scheduler = new oldRandomScheduling(rngSeed);
 
         final int numSimulations = 5;
         final int numProcesses = 10;
