@@ -27,10 +27,8 @@ public class RandomScheduling {
 		int processId;
 		int burstTime;
 		int arrivalMoment;
-		
 		// The total time the process has waited since its arrival
 		int totalWaitingTime;
-		
 		// The total CPU time the process has used so far
 		// (when equal to burstTime -> the process is complete!)
 		int allocatedCpuTime;
@@ -40,10 +38,8 @@ public class RandomScheduling {
 			this.burstTime = burstTime;
 			this.arrivalMoment = arrivalMoment;
 		}
-		
 		// ... add further fields and methods, if necessary
 	}
-	// Random number generator that must be used for the simulation
 	Random rng;
 
 	// ... add further fields and methods, if necessary
@@ -66,7 +62,6 @@ public class RandomScheduling {
     ScheduledProcess getProcess() {
         int rand = rng.nextInt(queue.size());
         ScheduledProcess p = queue.get(rand);
-        // System.out.println("rng.nextInt(queue.size()) => " + rand);
         return p;
     }
 
@@ -82,9 +77,10 @@ public class RandomScheduling {
 	 */
 	ScheduledProcess tickProcess(double probArrival, int maxBurstTime, int minBurstTime, int ticks) {
 		double rand = rng.nextDouble();
-		if (rand <= probArrival) {
+		System.out.println("RAND: " + rand);
+		if (rand > probArrival) {
 			int id = queue.size() + finishedProcesses.size();
-			int generatedBurst = rng.nextInt((maxBurstTime - minBurstTime)) + minBurstTime;
+			int generatedBurst = this.rng.nextInt((maxBurstTime - minBurstTime)) + minBurstTime;
 			ScheduledProcess newProcess = new ScheduledProcess(id, generatedBurst, ticks);
 			System.out.println("[!] New process created! | id: " + id + " | burst: " + generatedBurst);
 			return newProcess;
@@ -104,7 +100,7 @@ public class RandomScheduling {
         System.out.println("Creating new processes...");
         for (int k=0 ; k < numProcesses ; k++) {
 
-            int generatedBurst = rng.nextInt((maxBurstTime - minBurstTime)) + minBurstTime;
+            int generatedBurst = this.rng.nextInt((maxBurstTime - minBurstTime)) + minBurstTime;
             ScheduledProcess p = new ScheduledProcess(k, generatedBurst, k);
             queue.add(p);
             System.out.println("- id: " + k + "\n- burst: " + generatedBurst + "\n-------------");
@@ -114,27 +110,50 @@ public class RandomScheduling {
         if (!isPreemptive) {
             int ticks = 0;
             while (queue.size() > 0) {
-                
-                double rand = rng.nextDouble();
-                // System.out.println("rand = " + rand);
-
-                if (rand <= probArrival) {
-                    int id = queue.size() + finishedProcesses.size();
-                    int generatedBurst = rng.nextInt((maxBurstTime - minBurstTime)) + minBurstTime;
-                    ScheduledProcess newProcess = new ScheduledProcess(id, generatedBurst, ticks);
-                    System.out.println("[!] New process created! | id: " + id + " | burst: " + generatedBurst);
-                    queue.add(newProcess);
-                }
-
                 ScheduledProcess p = getProcess();
                 p.totalWaitingTime = ticks;
+
                 while (p.allocatedCpuTime < p.burstTime) {
                     p.allocatedCpuTime++;
                     ticks++;
+					System.out.println("process " + p.processId + " | alloc: " + p.allocatedCpuTime + " | burst: " + p.burstTime);
+					ScheduledProcess newProcess = tickProcess(probArrival, maxBurstTime, minBurstTime, ticks);
+					if (newProcess != null) {
+						queue.add(newProcess);
+					}
                 }
                 System.out.println("Process " + p.processId + " is done executing!");
                 finishedProcesses.add(p);
                 queue.remove(p);
+            }
+        }
+
+		if (isPreemptive) {
+            int ticks = 0;
+            while (queue.size() > 0) {
+                
+				ScheduledProcess p = tickProcess(probArrival, maxBurstTime, minBurstTime, ticks);
+				if (p != null) {
+					queue.add(p);
+				}
+
+                p = getProcess();
+                p.totalWaitingTime = ticks - p.totalWaitingTime;
+				int localTicks = 0;
+                while (p.allocatedCpuTime < p.burstTime) {
+                    ticks++;
+					localTicks++;
+                    p.allocatedCpuTime++;
+					System.out.println("process " + p.processId + " | alloc: " + p.allocatedCpuTime + " | burst: " + p.burstTime);
+					if (localTicks == timeQuantum) 
+						break;
+                }
+				System.out.println("Preemptied");
+				if (p.allocatedCpuTime == p.burstTime) {
+					System.out.println("Process " + p.processId + " is done executing!");
+					finishedProcesses.add(p);
+					queue.remove(p);
+				}
             }
         }
 
@@ -182,10 +201,7 @@ public class RandomScheduling {
 		
 	
 	public static void main(String args[]) {
-		// TODO: replace the seed value below with your birth date, e.g., "20001001"
 		final long rngSeed = 19990520;  
-		
-		
 		// Do not modify the code below — instead, complete the implementation
 		// of other methods!
 		RandomScheduling scheduler = new RandomScheduling(rngSeed);
