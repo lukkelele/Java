@@ -69,6 +69,28 @@ public class RandomScheduling {
         // System.out.println("rng.nextInt(queue.size()) => " + rand);
         return p;
     }
+
+	/**
+	 * Each tick might produce a new process if the randomly generated value is 
+	 * within the accepted range. 
+	 *
+	 * @param probArrival is the probability of a new process to be created
+	 * @param maxBurstTime is the maximum amount of burst a new process can have
+	 * @param minBurstTime is the minimum amount of burst a new process can have
+	 * @param ticks is the total amount of ticks 
+	 * @return a new process if the generated value is within the probability range else null
+	 */
+	ScheduledProcess tickProcess(double probArrival, int maxBurstTime, int minBurstTime, int ticks) {
+		double rand = rng.nextDouble();
+		if (rand <= probArrival) {
+			int id = queue.size() + finishedProcesses.size();
+			int generatedBurst = rng.nextInt((maxBurstTime - minBurstTime)) + minBurstTime;
+			ScheduledProcess newProcess = new ScheduledProcess(id, generatedBurst, ticks);
+			System.out.println("[!] New process created! | id: " + id + " | burst: " + generatedBurst);
+			return newProcess;
+		}
+		return null;
+	}
 	
 	public void runNewSimulation(final boolean isPreemptive,
         final int timeQuantum,
@@ -94,13 +116,13 @@ public class RandomScheduling {
             while (queue.size() > 0) {
                 
                 double rand = rng.nextDouble();
-                System.out.println("rand = " + rand);
+                // System.out.println("rand = " + rand);
 
                 if (rand <= probArrival) {
                     int id = queue.size() + finishedProcesses.size();
                     int generatedBurst = rng.nextInt((maxBurstTime - minBurstTime)) + minBurstTime;
                     ScheduledProcess newProcess = new ScheduledProcess(id, generatedBurst, ticks);
-                    System.out.println("New process created!\nid: " + id + "\nburst: " + generatedBurst + "\n-------");
+                    System.out.println("[!] New process created! | id: " + id + " | burst: " + generatedBurst);
                     queue.add(newProcess);
                 }
 
@@ -190,7 +212,7 @@ public class RandomScheduling {
 					minBurstTime, maxBurstTime,
 					maxArrivalsPerTick, probArrival);
 
-				System.out.println("Simulation results:"
+				System.out.println("\nSimulation results:"
 					+ "\n" + "----------------------");	
 				scheduler.printResults();
 
