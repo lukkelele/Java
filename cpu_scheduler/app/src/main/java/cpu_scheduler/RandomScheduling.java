@@ -53,15 +53,16 @@ public class RandomScheduling {
         finishedProcesses = new ArrayList<ScheduledProcess>();
         queue.clear();
         finishedProcesses.clear();
-        System.out.println("Cleared queue and finishedProcesses\n" 
-        + "Queue size: " + queue.size() + "\n"
-        + "finishedProcesses size: " + finishedProcesses.size() + "\n");
 	}
 
-    ScheduledProcess getProcess() {
-        int rand = rng.nextInt(queue.size());
-        ScheduledProcess p = queue.get(rand);
-        return p;
+    ScheduledProcess getProcess(int ticks) {
+		tickProcess(0.75, 10, 2, ticks);
+		if (queue.size() > 0) {
+			int rand = rng.nextInt(queue.size());
+			ScheduledProcess p = queue.get(rand);
+			return p;
+		}
+		return null;
     }
 
 	/**
@@ -72,19 +73,16 @@ public class RandomScheduling {
 	 * @param maxBurstTime is the maximum amount of burst a new process can have
 	 * @param minBurstTime is the minimum amount of burst a new process can have
 	 * @param ticks is the total amount of ticks 
-	 * @return a new process if the generated value is within the probability range else null
 	 */
-	ScheduledProcess tickProcess(double probArrival, int maxBurstTime, int minBurstTime, int ticks) {
+	void tickProcess(double probArrival, int maxBurstTime, int minBurstTime, int ticks) {
 		double rand = rng.nextDouble();
-		// System.out.println("RAND: " + rand);
 		if (rand > probArrival) {
-			int id = queue.size() + finishedProcesses.size();
+			int id = queue.size() + finishedProcesses.size() + 1;
 			int generatedBurst = this.rng.nextInt((maxBurstTime - minBurstTime)) + minBurstTime;
 			ScheduledProcess newProcess = new ScheduledProcess(id, generatedBurst, ticks);
-			System.out.println("[!] New process created! | id: " + id + " | burst: " + generatedBurst);
-			return newProcess;
+			// System.out.println("[!] New process created! | id: " + id + " | burst: " + generatedBurst);
+			this.queue.add(newProcess);
 		}
-		return null;
 	}
 	// TODO: Remove throws InterruptedException	
 	public void runNewSimulation(final boolean isPreemptive,
@@ -93,68 +91,65 @@ public class RandomScheduling {
 		final int minBurstTime,
         final int maxBurstTime,
 		final int maxArrivalsPerTick,
-        final double probArrival) throws InterruptedException {
+        final double probArrival) {
 		reset();
-
+			
+		/* 
         System.out.println("Creating new processes...");
         for (int k=0 ; k < numProcesses ; k++) {
-
             int generatedBurst = this.rng.nextInt((maxBurstTime - minBurstTime)) + minBurstTime;
             ScheduledProcess p = new ScheduledProcess(k, generatedBurst, k);
             queue.add(p);
             System.out.println("- id: " + k + "\n- burst: " + generatedBurst + "\n-------------");
         }
         System.out.println("New processes created!\n");
+		*/
+
+		boolean verbose = false;
 
         if (!isPreemptive) {
             int ticks = 0;
-            while (queue.size() > 0) {
-                ScheduledProcess p = getProcess();
-                p.totalWaitingTime = ticks;
+            while (finishedProcesses.size() < 10) {
+                ScheduledProcess p = getProcess(ticks);
+				ticks++;
+				if (p != null) {
+					p.totalWaitingTime = ticks;
+					p.allocatedCpuTime++;
+					if (verbose) System.out.println("process " + p.processId + " | alloc: " + p.allocatedCpuTime + " | burst: " + p.burstTime);
 
-                while (p.allocatedCpuTime < p.burstTime) {
-                    p.allocatedCpuTime++;
-                    ticks++;
-					System.out.println("process " + p.processId + " | alloc: " + p.allocatedCpuTime + " | burst: " + p.burstTime);
-					ScheduledProcess newProcess = tickProcess(probArrival, maxBurstTime, minBurstTime, ticks);
-					if (newProcess != null) {
-						System.out.println("Queue: " + queue.size());
-						queue.add(newProcess);
-						Thread.sleep(800);
+					if (p.allocatedCpuTime >= p.burstTime) {
+						if (verbose) System.out.println("Process " + p.processId + " is done executing!");
+						finishedProcesses.add(p);
+						queue.remove(p);
 					}
-					Thread.sleep(10);
-                }
-                System.out.println("Process " + p.processId + " is done executing!");
-                finishedProcesses.add(p);
-                queue.remove(p);
-            }
+				} 
+			} 
         }
 
 		if (isPreemptive) {
             int ticks = 0;
-            while (queue.size() > 0) {
-                ScheduledProcess p = getProcess();
-                p.totalWaitingTime = ticks - p.totalWaitingTime;
+            while (finishedProcesses.size() < 10) {
+                ScheduledProcess p = getProcess(ticks);
+				if (p != null) {
+					p.totalWaitingTime = ticks - p.allocatedCpuTime;
 
-				int localTicks = 0;
-                while (p.allocatedCpuTime < p.burstTime) {
-                    ticks++;
-					localTicks++;
-                    p.allocatedCpuTime++;
-					System.out.println("process " + p.processId + " | alloc: " + p.allocatedCpuTime + " | burst: " + p.burstTime);
+					int localTicks = 0;
+					while (p.allocatedCpuTime < p.burstTime) {
+						if (verbose) System.out.println("process " + p.processId + " | alloc: " + p.allocatedCpuTime + " | burst: " + p.burstTime + " | ended: " + ticks);
+						ticks++;
+						localTicks++;
+						p.allocatedCpuTime++;
 
-					ScheduledProcess newProcess = tickProcess(probArrival, maxBurstTime, minBurstTime, ticks);
-					// If a new process is created, add it to the queue
-					if (newProcess != null)
-						queue.add(newProcess);
-					if (localTicks == timeQuantum) 
-						break;
-                }
-				System.out.println("Preemptied");
-				if (p.allocatedCpuTime == p.burstTime) {
-					System.out.println("Process " + p.processId + " is done executing!");
-					finishedProcesses.add(p);
-					queue.remove(p);
+						tickProcess(probArrival, maxBurstTime, minBurstTime, ticks);
+						if (localTicks == timeQuantum) 
+							break;
+					}
+					if (verbose) System.out.println("Preemptied");
+					if (p.allocatedCpuTime == p.burstTime) {
+						if (verbose) System.out.println("Process " + p.processId + " is done executing!");
+						finishedProcesses.add(p);
+						queue.remove(p);
+					}
 				}
             }
         }
@@ -201,9 +196,8 @@ public class RandomScheduling {
         System.out.println("| Average waiting time for all processes: " + averageWaitingTime);
 	}
 		
-// TODO: Remove throws InterruptedException (for Thread.sleep(1000) )	
-	public static void main(String args[]) throws InterruptedException {
-		final long rngSeed = 990520;  
+	public static void main(String args[]) {
+		final long rngSeed = 19990520;  
 		// Do not modify the code below — instead, complete the implementation
 		// of other methods!
 		RandomScheduling scheduler = new RandomScheduling(rngSeed);
@@ -216,7 +210,7 @@ public class RandomScheduling {
 		final double probArrival = 0.75;
 		final int timeQuantum = 2;
 
-		boolean[] preemptionOptions = {false}; //, true};
+		boolean[] preemptionOptions = {false, true};
 
 		for (boolean isPreemptive: preemptionOptions) {
 
