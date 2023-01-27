@@ -204,7 +204,8 @@ public class RandomScheduling {
         int waitingTime = 0;
 		System.out.println("======================================");
         for (ScheduledProcess p : this.finishedProcesses) {
-            System.out.println("id: " + p.processId + "\n" 
+            System.out.println("> Process " + (finishedProcesses.indexOf(p) + 1) + " \n"
+            + "id: " + p.processId + "\n"
             + "burst: " + p.burstTime + "\n"
             + "arrival: " + p.arrivalMoment + "\n"
 			+ "ended: " + p.ended + "\n"
